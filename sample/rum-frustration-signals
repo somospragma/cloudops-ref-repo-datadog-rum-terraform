@@ -1,0 +1,1450 @@
+resource "datadog_dashboard_json" "rum-frustration-signals"{
+  dashboard = <<EOF
+  {
+    "title": "${var.client} - ${var.project} - Frustration Signals",
+    "description": "Este panel te ayuda a entender en qué puntos tus usuarios se sienten frustrados, molestos o bloqueados en su flujo de trabajo. Las señales de frustración se dividen en tres tipos:\n\n**Rage Click**: Ocurre cuando un usuario hace clic en el mismo botón más de 3 veces en un intervalo deslizante de 1 segundo.\n\n**Error Click**: Sucede cuando un usuario hace clic en un elemento y se genera un error de JavaScript.\n\n**Dead Click**: Se da cuando un usuario hace clic sobre un elemento estático que no produce ninguna acción en la página.",
+    "widgets": [
+      {
+        "definition": {
+          "title": "Overview",
+          "background_color": "vivid_purple",
+          "show_title": true,
+          "type": "group",
+          "layout_type": "ordered",
+          "widgets": [
+            {
+              "definition": {
+                "title": "Views with frustration signals",
+                "title_size": "16",
+                "title_align": "left",
+                "type": "query_value",
+                "requests": [
+                  {
+                    "formulas": [
+                      {
+                        "formula": "(query1 / query2) * 100"
+                      }
+                    ],
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "data_source": "rum",
+                        "name": "query1",
+                        "search": {
+                          "query": "$applicationName $viewName $email $sessionType $country $service @view.frustration.count:>0 @type:view"
+                        },
+                        "indexes": [
+                          "*"
+                        ],
+                        "compute": {
+                          "aggregation": "cardinality",
+                          "metric": "@view.id"
+                        },
+                        "group_by": []
+                      },
+                      {
+                        "data_source": "rum",
+                        "name": "query2",
+                        "search": {
+                          "query": "$applicationName $viewName $email $sessionType $country $service @type:view"
+                        },
+                        "indexes": [
+                          "*"
+                        ],
+                        "compute": {
+                          "aggregation": "cardinality",
+                          "metric": "@view.id"
+                        },
+                        "group_by": []
+                      }
+                    ]
+                  }
+                ],
+                "autoscale": true,
+                "custom_unit": "%",
+                "text_align": "center",
+                "precision": 2,
+                "timeseries_background": {
+                  "yaxis": {},
+                  "type": "bars"
+                }
+              },
+              "layout": {
+                "x": 0,
+                "y": 0,
+                "width": 3,
+                "height": 3
+              }
+            },
+            {
+              "definition": {
+                "title": "Views with dead clicks",
+                "title_size": "16",
+                "title_align": "left",
+                "type": "query_value",
+                "requests": [
+                  {
+                    "formulas": [
+                      {
+                        "alias": "Frustration ",
+                        "formula": "(query1 / query2) * 100"
+                      }
+                    ],
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "data_source": "rum",
+                        "name": "query1",
+                        "search": {
+                          "query": "$viewName @action.frustration.type:dead_click $email $sessionType @type:action"
+                        },
+                        "indexes": [
+                          "*"
+                        ],
+                        "compute": {
+                          "aggregation": "cardinality",
+                          "metric": "@view.id"
+                        },
+                        "group_by": []
+                      },
+                      {
+                        "data_source": "rum",
+                        "name": "query2",
+                        "search": {
+                          "query": "@type:view $viewName $email $sessionType $country $service"
+                        },
+                        "indexes": [
+                          "*"
+                        ],
+                        "compute": {
+                          "aggregation": "cardinality",
+                          "metric": "@view.id"
+                        },
+                        "group_by": []
+                      }
+                    ]
+                  }
+                ],
+                "autoscale": false,
+                "custom_unit": "%",
+                "precision": 2,
+                "timeseries_background": {
+                  "yaxis": {},
+                  "type": "bars"
+                }
+              },
+              "layout": {
+                "x": 3,
+                "y": 0,
+                "width": 3,
+                "height": 1
+              }
+            },
+            {
+              "definition": {
+                "title": "Frustration signals per session",
+                "title_size": "16",
+                "title_align": "left",
+                "show_legend": false,
+                "type": "distribution",
+                "xaxis": {
+                  "max": "auto",
+                  "include_zero": true,
+                  "scale": "linear",
+                  "min": "auto"
+                },
+                "yaxis": {
+                  "max": "auto",
+                  "include_zero": true,
+                  "scale": "linear",
+                  "min": "auto"
+                },
+                "requests": [
+                  {
+                    "request_type": "histogram",
+                    "query": {
+                      "data_source": "rum",
+                      "name": "query1",
+                      "search": {
+                        "query": "$email $sessionType $country $service $applicationName @session.frustration.count:>0 @type:session"
+                      },
+                      "indexes": [
+                        "*"
+                      ],
+                      "compute": {
+                        "aggregation": "avg",
+                        "metric": "@session.frustration.count"
+                      },
+                      "group_by": []
+                    }
+                  }
+                ]
+              },
+              "layout": {
+                "x": 6,
+                "y": 0,
+                "width": 6,
+                "height": 3
+              }
+            },
+            {
+              "definition": {
+                "title": "Views with error clicks",
+                "title_size": "16",
+                "title_align": "left",
+                "type": "query_value",
+                "requests": [
+                  {
+                    "formulas": [
+                      {
+                        "alias": "Frustration ",
+                        "formula": "(query1 / query2) * 100"
+                      }
+                    ],
+                    "conditional_formats": [
+                      {
+                        "comparator": ">",
+                        "palette": "black_on_light_red",
+                        "value": 0
+                      }
+                    ],
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "data_source": "rum",
+                        "name": "query1",
+                        "search": {
+                          "query": "$viewName @action.frustration.type:error_click $email $sessionType @type:action"
+                        },
+                        "indexes": [
+                          "*"
+                        ],
+                        "compute": {
+                          "aggregation": "cardinality",
+                          "metric": "@view.id"
+                        },
+                        "group_by": []
+                      },
+                      {
+                        "data_source": "rum",
+                        "name": "query2",
+                        "search": {
+                          "query": "@type:view $viewName $email $sessionType $country $service"
+                        },
+                        "indexes": [
+                          "*"
+                        ],
+                        "compute": {
+                          "aggregation": "cardinality",
+                          "metric": "@view.id"
+                        },
+                        "group_by": []
+                      }
+                    ]
+                  }
+                ],
+                "autoscale": false,
+                "custom_unit": "%",
+                "precision": 2,
+                "timeseries_background": {
+                  "yaxis": {},
+                  "type": "bars"
+                }
+              },
+              "layout": {
+                "x": 3,
+                "y": 1,
+                "width": 3,
+                "height": 1
+              }
+            },
+            {
+              "definition": {
+                "title": "Views with rage clicks",
+                "title_size": "16",
+                "title_align": "left",
+                "type": "query_value",
+                "requests": [
+                  {
+                    "formulas": [
+                      {
+                        "alias": "Frustration ",
+                        "formula": "(query1 / query2) * 100"
+                      }
+                    ],
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "data_source": "rum",
+                        "name": "query1",
+                        "search": {
+                          "query": "$viewName @action.frustration.type:rage_click $email $sessionType @type:action"
+                        },
+                        "indexes": [
+                          "*"
+                        ],
+                        "compute": {
+                          "aggregation": "cardinality",
+                          "metric": "@view.id"
+                        },
+                        "group_by": []
+                      },
+                      {
+                        "data_source": "rum",
+                        "name": "query2",
+                        "search": {
+                          "query": "@type:view $viewName $email $sessionType $country $service"
+                        },
+                        "indexes": [
+                          "*"
+                        ],
+                        "compute": {
+                          "aggregation": "cardinality",
+                          "metric": "@view.id"
+                        },
+                        "group_by": []
+                      }
+                    ]
+                  }
+                ],
+                "autoscale": false,
+                "custom_unit": "%",
+                "precision": 2,
+                "timeseries_background": {
+                  "yaxis": {},
+                  "type": "bars"
+                }
+              },
+              "layout": {
+                "x": 3,
+                "y": 2,
+                "width": 3,
+                "height": 1
+              }
+            }
+          ]
+        },
+        "layout": {
+          "x": 0,
+          "y": 0,
+          "width": 12,
+          "height": 4
+        }
+      },
+      {
+        "definition": {
+          "title": "Finding Frustration",
+          "background_color": "vivid_purple",
+          "show_title": true,
+          "type": "group",
+          "layout_type": "ordered",
+          "widgets": [
+            {
+              "definition": {
+                "title": "Pages with highest frustration rate",
+                "title_size": "16",
+                "title_align": "left",
+                "type": "query_table",
+                "requests": [
+                  {
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "$viewName $actionName $email $sessionType $country $service @type:action $applicationName"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@view.name",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 10
+                          },
+                          {
+                            "facet": "@action.frustration.type",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 10
+                          }
+                        ]
+                      },
+                      {
+                        "search": {
+                          "query": "$viewName $actionName $email $sessionType $country $service @type:action $applicationName"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "name": "query2",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@view.name",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 10
+                          }
+                        ]
+                      }
+                    ],
+                    "sort": {
+                      "count": 100,
+                      "order_by": [
+                        {
+                          "type": "formula",
+                          "index": 1,
+                          "order": "desc"
+                        }
+                      ]
+                    },
+                    "formulas": [
+                      {
+                        "alias": "Frustration Clicks",
+                        "cell_display_mode": "bar",
+                        "formula": "query1"
+                      },
+                      {
+                        "alias": "Frustration rate",
+                        "cell_display_mode": "bar",
+                        "formula": "query1 / query2 * 100"
+                      }
+                    ]
+                  }
+                ],
+                "has_search_bar": "always"
+              },
+              "layout": {
+                "x": 0,
+                "y": 0,
+                "width": 8,
+                "height": 4
+              }
+            },
+            {
+              "definition": {
+                "title": "Most frustrated users",
+                "title_size": "16",
+                "title_align": "left",
+                "type": "query_table",
+                "requests": [
+                  {
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "$viewName $actionName @action.frustration.type:* $email $country $service $applicationName"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "metric": "@action.name",
+                          "aggregation": "cardinality"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@usr.email",
+                            "sort": {
+                              "metric": "@action.name",
+                              "aggregation": "cardinality",
+                              "order": "desc"
+                            },
+                            "limit": 10
+                          }
+                        ]
+                      }
+                    ],
+                    "sort": {
+                      "count": 10,
+                      "order_by": [
+                        {
+                          "type": "formula",
+                          "index": 0,
+                          "order": "desc"
+                        }
+                      ]
+                    },
+                    "formulas": [
+                      {
+                        "alias": "Frustration Signals",
+                        "cell_display_mode": "bar",
+                        "formula": "query1"
+                      }
+                    ]
+                  }
+                ],
+                "has_search_bar": "always"
+              },
+              "layout": {
+                "x": 8,
+                "y": 0,
+                "width": 4,
+                "height": 4
+              }
+            },
+            {
+              "definition": {
+                "title": "Most frustrating actions",
+                "title_size": "16",
+                "title_align": "left",
+                "type": "query_table",
+                "requests": [
+                  {
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "$viewName $actionName $email $sessionType $country $service @type:action $applicationName"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@action.name",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 10
+                          },
+                          {
+                            "facet": "@view.name",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 10
+                          },
+                          {
+                            "facet": "@action.frustration.type",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 10
+                          }
+                        ]
+                      }
+                    ],
+                    "sort": {
+                      "count": 1000,
+                      "order_by": [
+                        {
+                          "type": "formula",
+                          "index": 0,
+                          "order": "desc"
+                        }
+                      ]
+                    },
+                    "formulas": [
+                      {
+                        "alias": "Frustration Clicks",
+                        "cell_display_mode": "bar",
+                        "formula": "query1"
+                      }
+                    ]
+                  }
+                ],
+                "has_search_bar": "always"
+              },
+              "layout": {
+                "x": 0,
+                "y": 4,
+                "width": 12,
+                "height": 4
+              }
+            }
+          ]
+        },
+        "layout": {
+          "x": 0,
+          "y": 4,
+          "width": 12,
+          "height": 9
+        }
+      },
+      {
+        "definition": {
+          "title": "Rage Clicks",
+          "background_color": "vivid_purple",
+          "show_title": true,
+          "type": "group",
+          "layout_type": "ordered",
+          "widgets": [
+            {
+              "definition": {
+                "type": "note",
+                "content": "**Rage Click**: Ocurre cuando un usuario hace clic en el mismo botón más de 3 veces en un intervalo deslizante de 1 segundo.",
+                "background_color": "purple",
+                "font_size": "14",
+                "text_align": "left",
+                "vertical_align": "center",
+                "show_tick": true,
+                "tick_pos": "50%",
+                "tick_edge": "bottom",
+                "has_padding": true
+              },
+              "layout": {
+                "x": 0,
+                "y": 0,
+                "width": 4,
+                "height": 1
+              }
+            },
+            {
+              "definition": {
+                "title": "Actions with most rage clicks",
+                "title_size": "16",
+                "title_align": "left",
+                "type": "query_table",
+                "requests": [
+                  {
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "$viewName $actionName @action.frustration.type:rage_click $email $sessionType $country $service @type:action $applicationName"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@view.name",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 15
+                          },
+                          {
+                            "facet": "@action.name",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 15
+                          }
+                        ]
+                      },
+                      {
+                        "search": {
+                          "query": "$viewName $actionName $email $sessionType $country $service @type:action $applicationName"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "name": "query2",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@view.name",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 25
+                          }
+                        ]
+                      }
+                    ],
+                    "sort": {
+                      "count": 225,
+                      "order_by": [
+                        {
+                          "type": "formula",
+                          "index": 1,
+                          "order": "desc"
+                        }
+                      ]
+                    },
+                    "formulas": [
+                      {
+                        "alias": "Rage Clicks",
+                        "cell_display_mode": "bar",
+                        "formula": "query1"
+                      },
+                      {
+                        "alias": "% Rage clicks per view",
+                        "cell_display_mode": "bar",
+                        "conditional_formats": [
+                          {
+                            "palette": "red_on_white",
+                            "comparator": ">",
+                            "value": 0.25
+                          },
+                          {
+                            "palette": "yellow_on_white",
+                            "comparator": ">",
+                            "value": 0.1
+                          }
+                        ],
+                        "formula": "query1 / query2 * 100"
+                      }
+                    ]
+                  }
+                ],
+                "has_search_bar": "always"
+              },
+              "layout": {
+                "x": 4,
+                "y": 0,
+                "width": 8,
+                "height": 5
+              }
+            },
+            {
+              "definition": {
+                "title": "Average number of rage clicks per view",
+                "title_size": "16",
+                "title_align": "left",
+                "type": "query_value",
+                "requests": [
+                  {
+                    "formulas": [
+                      {
+                        "formula": "query1 / query2"
+                      }
+                    ],
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "$viewName $actionName @action.frustration.type:rage_click $email $sessionType $country $service $applicationName @type:action"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "metric": "@action.id",
+                          "aggregation": "cardinality"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": []
+                      },
+                      {
+                        "search": {
+                          "query": "$viewName $actionName @action.frustration.type:rage_click $email $sessionType $country $service $applicationName @type:action"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "metric": "@view.id",
+                          "aggregation": "cardinality"
+                        },
+                        "name": "query2",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": []
+                      }
+                    ]
+                  }
+                ],
+                "autoscale": true,
+                "precision": 2,
+                "timeseries_background": {
+                  "type": "bars",
+                  "yaxis": {
+                    "include_zero": true
+                  }
+                }
+              },
+              "layout": {
+                "x": 0,
+                "y": 1,
+                "width": 4,
+                "height": 1
+              }
+            },
+            {
+              "definition": {
+                "title": "Change in rage clicks from previous week",
+                "title_size": "16",
+                "title_align": "left",
+                "type": "change",
+                "requests": [
+                  {
+                    "formulas": [
+                      {
+                        "formula": "week_before(query2)"
+                      },
+                      {
+                        "formula": "query2"
+                      }
+                    ],
+                    "order_by": "change",
+                    "order_dir": "desc",
+                    "compare_to": "hour_before",
+                    "response_format": "scalar",
+                    "increase_good": false,
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "@type:action $viewName $actionName @action.frustration.type:rage_click $email $applicationName $service $country $sessionType"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "interval": 86400000,
+                          "aggregation": "count"
+                        },
+                        "name": "query2",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@action.name",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 100
+                          }
+                        ]
+                      }
+                    ],
+                    "change_type": "absolute"
+                  }
+                ]
+              },
+              "layout": {
+                "x": 0,
+                "y": 2,
+                "width": 4,
+                "height": 3
+              }
+            }
+          ]
+        },
+        "layout": {
+          "x": 0,
+          "y": 13,
+          "width": 12,
+          "height": 6,
+          "is_column_break": true
+        }
+      },
+      {
+        "definition": {
+          "title": "Error Clicks",
+          "background_color": "vivid_purple",
+          "show_title": true,
+          "type": "group",
+          "layout_type": "ordered",
+          "widgets": [
+            {
+              "definition": {
+                "type": "note",
+                "content": "**Error Click**: Sucede cuando un usuario hace clic en un elemento y se genera un error de JavaScript.",
+                "background_color": "pink",
+                "font_size": "14",
+                "text_align": "left",
+                "vertical_align": "center",
+                "show_tick": true,
+                "tick_pos": "50%",
+                "tick_edge": "bottom",
+                "has_padding": true
+              },
+              "layout": {
+                "x": 0,
+                "y": 0,
+                "width": 4,
+                "height": 1
+              }
+            },
+            {
+              "definition": {
+                "title": "Actions with most error clicks",
+                "title_size": "16",
+                "title_align": "left",
+                "type": "query_table",
+                "requests": [
+                  {
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "$viewName $actionName @action.frustration.type:error_click $email $sessionType $country $service @type:action $applicationName"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@view.name",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 10
+                          },
+                          {
+                            "facet": "@action.name",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 10
+                          }
+                        ]
+                      },
+                      {
+                        "search": {
+                          "query": "$viewName $actionName @action.frustration.type:error_click $email $sessionType $country $service @type:action $applicationName"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "name": "query2",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@view.name",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 10
+                          }
+                        ]
+                      }
+                    ],
+                    "sort": {
+                      "count": 100,
+                      "order_by": [
+                        {
+                          "type": "formula",
+                          "index": 0,
+                          "order": "desc"
+                        }
+                      ]
+                    },
+                    "formulas": [
+                      {
+                        "alias": "Error Clicks",
+                        "cell_display_mode": "bar",
+                        "formula": "query1"
+                      },
+                      {
+                        "alias": "% Error Clicks per View",
+                        "cell_display_mode": "bar",
+                        "conditional_formats": [
+                          {
+                            "palette": "red_on_white",
+                            "comparator": ">",
+                            "value": 0.25
+                          },
+                          {
+                            "palette": "yellow_on_white",
+                            "comparator": ">",
+                            "value": 0.1
+                          }
+                        ],
+                        "formula": "query1 / query2 * 100"
+                      }
+                    ]
+                  }
+                ],
+                "has_search_bar": "always"
+              },
+              "layout": {
+                "x": 4,
+                "y": 0,
+                "width": 8,
+                "height": 5
+              }
+            },
+            {
+              "definition": {
+                "title": "Average number of error clicks per view",
+                "title_size": "16",
+                "title_align": "left",
+                "type": "query_value",
+                "requests": [
+                  {
+                    "formulas": [
+                      {
+                        "formula": "query1 / query2"
+                      }
+                    ],
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "$viewName $actionName @action.frustration.type:error_click $email $sessionType $country $service $applicationName @type:action"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "metric": "@action.id",
+                          "aggregation": "cardinality"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": []
+                      },
+                      {
+                        "search": {
+                          "query": "$viewName $actionName @action.frustration.type:error_click $email $sessionType $country $service $applicationName @type:action"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "metric": "@view.id",
+                          "aggregation": "cardinality"
+                        },
+                        "name": "query2",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": []
+                      }
+                    ]
+                  }
+                ],
+                "autoscale": true,
+                "precision": 2,
+                "timeseries_background": {
+                  "type": "bars",
+                  "yaxis": {
+                    "include_zero": true
+                  }
+                }
+              },
+              "layout": {
+                "x": 0,
+                "y": 1,
+                "width": 4,
+                "height": 1
+              }
+            },
+            {
+              "definition": {
+                "title": "Change in error clicks from previous week",
+                "title_size": "16",
+                "title_align": "left",
+                "type": "change",
+                "requests": [
+                  {
+                    "formulas": [
+                      {
+                        "formula": "week_before(query2)"
+                      },
+                      {
+                        "formula": "query2"
+                      }
+                    ],
+                    "order_by": "change",
+                    "order_dir": "desc",
+                    "compare_to": "hour_before",
+                    "response_format": "scalar",
+                    "increase_good": false,
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "$viewName $actionName @action.frustration.type:error_click $email $sessionType $country $service @type:action $applicationName"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "interval": 86400000,
+                          "aggregation": "count"
+                        },
+                        "name": "query2",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@action.name",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 100
+                          }
+                        ]
+                      }
+                    ],
+                    "change_type": "absolute"
+                  }
+                ]
+              },
+              "layout": {
+                "x": 0,
+                "y": 2,
+                "width": 4,
+                "height": 3
+              }
+            }
+          ]
+        },
+        "layout": {
+          "x": 0,
+          "y": 19,
+          "width": 12,
+          "height": 6
+        }
+      },
+      {
+        "definition": {
+          "title": "Dead Clicks",
+          "background_color": "vivid_purple",
+          "show_title": true,
+          "type": "group",
+          "layout_type": "ordered",
+          "widgets": [
+            {
+              "definition": {
+                "type": "note",
+                "content": "**Dead Click**: Se da cuando un usuario hace clic sobre un elemento estático que no produce ninguna acción en la página.",
+                "background_color": "gray",
+                "font_size": "14",
+                "text_align": "left",
+                "vertical_align": "center",
+                "show_tick": true,
+                "tick_pos": "50%",
+                "tick_edge": "bottom",
+                "has_padding": true
+              },
+              "layout": {
+                "x": 0,
+                "y": 0,
+                "width": 4,
+                "height": 1
+              }
+            },
+            {
+              "definition": {
+                "title": "Actions with most dead clicks",
+                "title_size": "16",
+                "title_align": "left",
+                "type": "query_table",
+                "requests": [
+                  {
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "$viewName $actionName @action.frustration.type:dead_click $email $sessionType $country $service @type:action $applicationName"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@view.name",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 10
+                          },
+                          {
+                            "facet": "@action.name",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 10
+                          }
+                        ]
+                      },
+                      {
+                        "search": {
+                          "query": "$viewName $actionName @action.frustration.type:dead_click $email $sessionType $country $service @type:action $applicationName"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "name": "query2",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@view.name",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 10
+                          }
+                        ]
+                      }
+                    ],
+                    "sort": {
+                      "count": 100,
+                      "order_by": [
+                        {
+                          "type": "formula",
+                          "index": 1,
+                          "order": "desc"
+                        }
+                      ]
+                    },
+                    "formulas": [
+                      {
+                        "alias": "Dead Clicks",
+                        "cell_display_mode": "bar",
+                        "formula": "query1"
+                      },
+                      {
+                        "alias": "% Dead Clicks per View",
+                        "cell_display_mode": "bar",
+                        "conditional_formats": [
+                          {
+                            "palette": "red_on_white",
+                            "comparator": ">",
+                            "value": 0.25
+                          },
+                          {
+                            "palette": "yellow_on_white",
+                            "comparator": ">",
+                            "value": 0.1
+                          }
+                        ],
+                        "formula": "query1 / query2 * 100"
+                      }
+                    ]
+                  }
+                ],
+                "has_search_bar": "auto"
+              },
+              "layout": {
+                "x": 4,
+                "y": 0,
+                "width": 8,
+                "height": 5
+              }
+            },
+            {
+              "definition": {
+                "title": "Average number of dead clicks per view",
+                "title_size": "16",
+                "title_align": "left",
+                "type": "query_value",
+                "requests": [
+                  {
+                    "formulas": [
+                      {
+                        "formula": "query1 / query2"
+                      }
+                    ],
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "$viewName $actionName @action.frustration.type:dead_click $email $sessionType $country $service $applicationName @type:action"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "metric": "@action.id",
+                          "aggregation": "cardinality"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": []
+                      },
+                      {
+                        "search": {
+                          "query": "$viewName $actionName @action.frustration.type:dead_click $email $sessionType $country $service $applicationName @type:action"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "metric": "@view.id",
+                          "aggregation": "cardinality"
+                        },
+                        "name": "query2",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": []
+                      }
+                    ]
+                  }
+                ],
+                "autoscale": true,
+                "precision": 2,
+                "timeseries_background": {
+                  "type": "bars",
+                  "yaxis": {
+                    "include_zero": true
+                  }
+                }
+              },
+              "layout": {
+                "x": 0,
+                "y": 1,
+                "width": 4,
+                "height": 1
+              }
+            },
+            {
+              "definition": {
+                "title": "Change in dead clicks from previous week",
+                "title_size": "16",
+                "title_align": "left",
+                "type": "change",
+                "requests": [
+                  {
+                    "formulas": [
+                      {
+                        "formula": "week_before(query2)"
+                      },
+                      {
+                        "formula": "query2"
+                      }
+                    ],
+                    "order_by": "change",
+                    "order_dir": "desc",
+                    "compare_to": "hour_before",
+                    "response_format": "scalar",
+                    "increase_good": false,
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "$viewName $actionName $email @action.frustration.type:dead_click $sessionType $country $service @type:action $applicationName"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "interval": 86400000,
+                          "aggregation": "count"
+                        },
+                        "name": "query2",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@action.name",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 100
+                          }
+                        ]
+                      }
+                    ],
+                    "change_type": "absolute"
+                  }
+                ]
+              },
+              "layout": {
+                "x": 0,
+                "y": 2,
+                "width": 4,
+                "height": 3
+              }
+            }
+          ]
+        },
+        "layout": {
+          "x": 0,
+          "y": 25,
+          "width": 12,
+          "height": 6
+        }
+      }
+    ],
+    "template_variables": [
+      {
+        "name": "sessionType",
+        "prefix": "@session.type",
+        "available_values": [],
+        "default": "user"
+      },
+      {
+        "name": "applicationName",
+        "prefix": "@application.name",
+        "available_values": [],
+        "default": "*"
+      },
+      {
+        "name": "actionName",
+        "prefix": "@action.name",
+        "available_values": [],
+        "default": "*"
+      },
+      {
+        "name": "viewName",
+        "prefix": "@view.name",
+        "available_values": [],
+        "default": "*"
+      },
+      {
+        "name": "email",
+        "prefix": "@usr.email",
+        "available_values": [],
+        "default": "*"
+      },
+      {
+        "name": "country",
+        "prefix": "@geo.country",
+        "available_values": [],
+        "default": "*"
+      },
+      {
+        "name": "service",
+        "prefix": "service",
+        "available_values": [],
+        "default": "*"
+      }
+    ],
+    "layout_type": "ordered",
+    "notify_list": [],
+    "reflow_type": "fixed"
+  }
+
+EOF
+}
