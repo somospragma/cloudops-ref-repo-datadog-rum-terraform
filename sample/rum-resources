@@ -1,0 +1,2126 @@
+resource "datadog_dashboard_json""rum-resources"{
+  dashboard = <<EOF
+
+{
+    "title": "${var.client} - ${var.project} - Resources",
+    "description": "Este panel te ayudará a identificar qué recursos tienen mayor impacto en el rendimiento de tu aplicación.\n\n**Most Requested Resources**: Visualiza qué recursos se cargan con mayor frecuencia y mide su tamaño y tiempo de carga.\n\n**XHR and Fetch Requests**: Distribución de solicitudes, método utilizado y códigos de estado de error.\n\n**Resource Load Timings**: Supervisa las tendencias en los tiempos de carga de recursos (resolución DNS, conexión inicial, tiempo hasta el primer byte, descarga), recopilados por el SDK del navegador.\n\n**3rd Party Resources:** Comprende cuáles de tus recursos de terceros están teniendo mayor impacto en el rendimiento de tu aplicación.",
+    "widgets": [
+      {
+        "definition": {
+          "title": "Overview",
+          "background_color": "vivid_purple",
+          "show_title": true,
+          "type": "group",
+          "layout_type": "ordered",
+          "widgets": [
+            {
+              "definition": {
+                "title": "Resources by type",
+                "requests": [
+                  {
+                    "style": {
+                      "palette": "datadog16"
+                    },
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "data_source": "rum",
+                        "name": "query1",
+                        "search": {
+                          "query": "@type:resource $resourcePath $pathGroup $viewName $country $3rdPartyProvider $resourceKind $applicationName $service $env $version $applicationName $sessionType"
+                        },
+                        "indexes": [
+                          "*"
+                        ],
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "group_by": [
+                          {
+                            "facet": "@resource.type",
+                            "limit": 15,
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            }
+                          }
+                        ]
+                      }
+                    ],
+                    "formulas": [
+                      {
+                        "formula": "query1"
+                      }
+                    ]
+                  }
+                ],
+                "type": "sunburst"
+              },
+              "layout": {
+                "x": 0,
+                "y": 0,
+                "width": 2,
+                "height": 3
+              }
+            },
+            {
+              "definition": {
+                "title": "Slowest resources",
+                "type": "toplist",
+                "requests": [
+                  {
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "$resourcePath $pathGroup $viewName $country $3rdPartyProvider $resourceKind $applicationName $service $env $version $applicationName $sessionType @type:resource"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "metric": "@resource.duration",
+                          "aggregation": "avg"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@resource.url_path",
+                            "sort": {
+                              "metric": "@resource.duration",
+                              "aggregation": "avg",
+                              "order": "desc"
+                            },
+                            "limit": 25
+                          }
+                        ]
+                      }
+                    ],
+                    "formulas": [
+                      {
+                        "formula": "query1"
+                      }
+                    ],
+                    "sort": {
+                      "order_by": [
+                        {
+                          "type": "formula",
+                          "index": 0,
+                          "order": "desc"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              "layout": {
+                "x": 2,
+                "y": 0,
+                "width": 3,
+                "height": 3
+              }
+            },
+            {
+              "definition": {
+                "title": "Heaviest resources",
+                "type": "toplist",
+                "requests": [
+                  {
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "$resourcePath $pathGroup $viewName $country $3rdPartyProvider $resourceKind $applicationName $service $env $version $applicationName $sessionType @type:resource"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "metric": "@resource.size",
+                          "aggregation": "median"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@resource.url_path",
+                            "sort": {
+                              "metric": "@resource.size",
+                              "aggregation": "median",
+                              "order": "desc"
+                            },
+                            "limit": 25
+                          }
+                        ]
+                      }
+                    ],
+                    "formulas": [
+                      {
+                        "formula": "query1"
+                      }
+                    ],
+                    "sort": {
+                      "order_by": [
+                        {
+                          "type": "formula",
+                          "index": 0,
+                          "order": "desc"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              "layout": {
+                "x": 5,
+                "y": 0,
+                "width": 3,
+                "height": 3
+              }
+            },
+            {
+              "definition": {
+                "title": "Resources by type over time",
+                "show_legend": true,
+                "legend_layout": "auto",
+                "legend_columns": [
+                  "avg",
+                  "min",
+                  "max",
+                  "value",
+                  "sum"
+                ],
+                "type": "timeseries",
+                "requests": [
+                  {
+                    "formulas": [
+                      {
+                        "formula": "query1"
+                      }
+                    ],
+                    "queries": [
+                      {
+                        "data_source": "rum",
+                        "name": "query1",
+                        "search": {
+                          "query": "@type:resource $resourcePath $pathGroup $viewName $country $3rdPartyProvider $resourceKind $applicationName $service $env $version $applicationName $sessionType"
+                        },
+                        "indexes": [
+                          "*"
+                        ],
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "group_by": [
+                          {
+                            "facet": "@resource.type",
+                            "limit": 15,
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            }
+                          }
+                        ]
+                      }
+                    ],
+                    "response_format": "timeseries",
+                    "style": {
+                      "palette": "classic"
+                    },
+                    "display_type": "bars"
+                  }
+                ]
+              },
+              "layout": {
+                "x": 8,
+                "y": 0,
+                "width": 4,
+                "height": 3
+              }
+            }
+          ]
+        },
+        "layout": {
+          "x": 0,
+          "y": 0,
+          "width": 12,
+          "height": 4
+        }
+      },
+      {
+        "definition": {
+          "title": "Most Requested Resources",
+          "background_color": "vivid_purple",
+          "show_title": true,
+          "type": "group",
+          "layout_type": "ordered",
+          "widgets": [
+            {
+              "definition": {
+                "title": "Median duration and median size of most requested resources",
+                "type": "query_table",
+                "requests": [
+                  {
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "@type:resource $resourcePath $pathGroup $viewName $country $3rdPartyProvider $resourceKind $applicationName $service $env $version $applicationName $sessionType"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@resource.url_path",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 30
+                          },
+                          {
+                            "facet": "@resource.type",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 30
+                          }
+                        ]
+                      },
+                      {
+                        "search": {
+                          "query": "@type:resource $resourcePath $pathGroup $viewName $country $3rdPartyProvider $resourceKind $applicationName $service $env $version $applicationName $sessionType"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "metric": "@resource.duration",
+                          "aggregation": "median"
+                        },
+                        "name": "query2",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@resource.url_path",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 30
+                          },
+                          {
+                            "facet": "@resource.type",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 30
+                          }
+                        ]
+                      },
+                      {
+                        "search": {
+                          "query": "@type:resource $resourcePath $pathGroup $viewName $country $3rdPartyProvider $resourceKind $applicationName $service $env $version $applicationName $sessionType"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "metric": "@resource.size",
+                          "aggregation": "median"
+                        },
+                        "name": "query3",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@resource.url_path",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 30
+                          },
+                          {
+                            "facet": "@resource.type",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 30
+                          }
+                        ]
+                      }
+                    ],
+                    "sort": {
+                      "count": 900,
+                      "order_by": [
+                        {
+                          "type": "formula",
+                          "index": 0,
+                          "order": "desc"
+                        }
+                      ]
+                    },
+                    "formulas": [
+                      {
+                        "alias": "Count",
+                        "formula": "query1"
+                      },
+                      {
+                        "alias": "Load time",
+                        "formula": "query2"
+                      },
+                      {
+                        "alias": "Size",
+                        "formula": "query3"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "layout": {
+                "x": 0,
+                "y": 0,
+                "width": 6,
+                "height": 4
+              }
+            },
+            {
+              "definition": {
+                "title": "Pages with the most requested resources by median duration and size",
+                "type": "query_table",
+                "requests": [
+                  {
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "data_source": "rum",
+                        "name": "query1",
+                        "search": {
+                          "query": "$resourcePath $pathGroup $viewName $country $3rdPartyProvider $resourceKind $applicationName $service $env $version $applicationName $sessionType @type:resource"
+                        },
+                        "indexes": [
+                          "*"
+                        ],
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "group_by": [
+                          {
+                            "facet": "@view.name",
+                            "limit": 10,
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "data_source": "rum",
+                        "name": "query2",
+                        "search": {
+                          "query": "$resourcePath $pathGroup $viewName $country $3rdPartyProvider $resourceKind $applicationName $service $env $version $applicationName $sessionType @type:resource"
+                        },
+                        "indexes": [
+                          "*"
+                        ],
+                        "compute": {
+                          "aggregation": "median",
+                          "metric": "@resource.duration"
+                        },
+                        "group_by": [
+                          {
+                            "facet": "@view.name",
+                            "limit": 10,
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "data_source": "rum",
+                        "name": "query3",
+                        "search": {
+                          "query": "$resourcePath $pathGroup $viewName $country $3rdPartyProvider $resourceKind $applicationName $service $env $version $applicationName $sessionType @type:resource"
+                        },
+                        "indexes": [
+                          "*"
+                        ],
+                        "compute": {
+                          "aggregation": "median",
+                          "metric": "@resource.size"
+                        },
+                        "group_by": [
+                          {
+                            "facet": "@view.name",
+                            "limit": 10,
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            }
+                          }
+                        ]
+                      }
+                    ],
+                    "sort": {
+                      "order_by": [
+                        {
+                          "type": "formula",
+                          "index": 0,
+                          "order": "desc"
+                        }
+                      ]
+                    },
+                    "formulas": [
+                      {
+                        "alias": "Resource count",
+                        "formula": "query1"
+                      },
+                      {
+                        "alias": "Resource load time",
+                        "formula": "query2"
+                      },
+                      {
+                        "alias": "Resource size",
+                        "formula": "query3"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "layout": {
+                "x": 6,
+                "y": 0,
+                "width": 6,
+                "height": 4
+              }
+            }
+          ]
+        },
+        "layout": {
+          "x": 0,
+          "y": 4,
+          "width": 12,
+          "height": 5
+        }
+      },
+      {
+        "definition": {
+          "title": "XHR and Fetch Requests",
+          "background_color": "vivid_purple",
+          "show_title": true,
+          "type": "group",
+          "layout_type": "ordered",
+          "widgets": [
+            {
+              "definition": {
+                "title": "XHR and Fetch requests with status code >= 400",
+                "show_legend": false,
+                "legend_layout": "auto",
+                "legend_columns": [
+                  "avg",
+                  "min",
+                  "max",
+                  "value",
+                  "sum"
+                ],
+                "type": "timeseries",
+                "requests": [
+                  {
+                    "formulas": [
+                      {
+                        "formula": "query1"
+                      }
+                    ],
+                    "response_format": "timeseries",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "@resource.status_code:>=400 $resourcePath $pathGroup $viewName $country @resource.type:(xhr OR fetch) $3rdPartyProvider $resourceKind $applicationName $service $env $version $applicationName $sessionType @type:resource"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@resource.status_code",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 10
+                          }
+                        ]
+                      }
+                    ],
+                    "style": {
+                      "palette": "semantic",
+                      "line_type": "solid",
+                      "line_width": "normal"
+                    },
+                    "display_type": "bars"
+                  }
+                ],
+                "yaxis": {
+                  "include_zero": true,
+                  "scale": "linear",
+                  "label": "",
+                  "min": "auto",
+                  "max": "auto"
+                }
+              },
+              "layout": {
+                "x": 0,
+                "y": 0,
+                "width": 4,
+                "height": 2
+              }
+            },
+            {
+              "definition": {
+                "title": "XHR and Fetch requests repartition",
+                "show_legend": false,
+                "legend_size": "0",
+                "type": "timeseries",
+                "requests": [
+                  {
+                    "response_format": "timeseries",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "$resourcePath $pathGroup $viewName $country @resource.type:(fetch OR xhr) $3rdPartyProvider $resourceKind $applicationName $service $env $version $applicationName $sessionType"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@resource.type",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 10
+                          }
+                        ]
+                      }
+                    ],
+                    "style": {
+                      "palette": "dog_classic",
+                      "line_type": "solid",
+                      "line_width": "normal"
+                    },
+                    "display_type": "bars"
+                  }
+                ],
+                "yaxis": {
+                  "include_zero": true,
+                  "scale": "linear",
+                  "label": "",
+                  "min": "auto",
+                  "max": "auto"
+                },
+                "right_yaxis": {
+                  "include_zero": true,
+                  "scale": "linear",
+                  "label": "",
+                  "min": "auto",
+                  "max": "auto"
+                }
+              },
+              "layout": {
+                "x": 4,
+                "y": 0,
+                "width": 4,
+                "height": 2
+              }
+            },
+            {
+              "definition": {
+                "title": "XHR and Fetch requests grouped by method",
+                "show_legend": false,
+                "legend_size": "0",
+                "type": "timeseries",
+                "requests": [
+                  {
+                    "response_format": "timeseries",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "$resourcePath $pathGroup $viewName $country @resource.type:(xhr OR fetch) @type:resource $3rdPartyProvider $resourceKind $applicationName $service $env $version $applicationName $sessionType"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@resource.method",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 10
+                          }
+                        ]
+                      }
+                    ],
+                    "style": {
+                      "palette": "dog_classic",
+                      "line_type": "solid",
+                      "line_width": "normal"
+                    },
+                    "display_type": "bars"
+                  }
+                ],
+                "yaxis": {
+                  "include_zero": true,
+                  "scale": "linear",
+                  "label": "",
+                  "min": "auto",
+                  "max": "auto"
+                },
+                "right_yaxis": {
+                  "include_zero": true,
+                  "scale": "linear",
+                  "label": "",
+                  "min": "auto",
+                  "max": "auto"
+                }
+              },
+              "layout": {
+                "x": 8,
+                "y": 0,
+                "width": 4,
+                "height": 2
+              }
+            },
+            {
+              "definition": {
+                "title": "XHR and Fetch requests with status code >= 400",
+                "requests": [
+                  {
+                    "style": {
+                      "palette": "semantic"
+                    },
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "@resource.status_code:>=400 $resourcePath $pathGroup $viewName $country @resource.type:(xhr OR fetch) $3rdPartyProvider $resourceKind $applicationName $service $env $version $applicationName $sessionType @type:resource"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@resource.status_code",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 10
+                          }
+                        ]
+                      }
+                    ],
+                    "formulas": [
+                      {
+                        "formula": "query1"
+                      }
+                    ]
+                  }
+                ],
+                "type": "sunburst"
+              },
+              "layout": {
+                "x": 0,
+                "y": 2,
+                "width": 4,
+                "height": 3
+              }
+            },
+            {
+              "definition": {
+                "title": "XHR and Fetch requests repartition",
+                "requests": [
+                  {
+                    "style": {
+                      "palette": "datadog16"
+                    },
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "$resourcePath $pathGroup $viewName $country @resource.type:(fetch OR xhr) $3rdPartyProvider $resourceKind $applicationName $service $env $version $applicationName $sessionType"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@resource.type",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 10
+                          }
+                        ]
+                      }
+                    ],
+                    "formulas": [
+                      {
+                        "formula": "query1"
+                      }
+                    ]
+                  }
+                ],
+                "type": "sunburst"
+              },
+              "layout": {
+                "x": 4,
+                "y": 2,
+                "width": 4,
+                "height": 3
+              }
+            },
+            {
+              "definition": {
+                "title": "XHR and Fetch requests grouped by method",
+                "requests": [
+                  {
+                    "style": {
+                      "palette": "datadog16"
+                    },
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "$resourcePath $pathGroup $viewName $country @resource.type:(xhr OR fetch) $3rdPartyProvider $resourceKind $applicationName $service $env $version $applicationName $sessionType @type:resource"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@resource.method",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 10
+                          }
+                        ]
+                      }
+                    ],
+                    "formulas": [
+                      {
+                        "formula": "query1"
+                      }
+                    ]
+                  }
+                ],
+                "type": "sunburst"
+              },
+              "layout": {
+                "x": 8,
+                "y": 2,
+                "width": 4,
+                "height": 3
+              }
+            }
+          ]
+        },
+        "layout": {
+          "x": 0,
+          "y": 9,
+          "width": 12,
+          "height": 6
+        }
+      },
+      {
+        "definition": {
+          "title": "Resource Timings",
+          "background_color": "vivid_purple",
+          "show_title": true,
+          "type": "group",
+          "layout_type": "ordered",
+          "widgets": [
+            {
+              "definition": {
+                "type": "note",
+                "content": "The **duration** of a resource is the total time taken for a resource to be loaded and includes:\n\n- **DNS Lookup**\n- **Initial Connection**\n- **Time To First Byte**: time spent on server processing the request\n- **Download**: time spent receiving data from the server\n\nMore information is available in the [RUM documentation](https://docs.datadoghq.com/real_user_monitoring/data_collected/resource)",
+                "background_color": "yellow",
+                "font_size": "14",
+                "text_align": "left",
+                "show_tick": false,
+                "tick_pos": "50%",
+                "tick_edge": "left"
+              },
+              "layout": {
+                "x": 0,
+                "y": 0,
+                "width": 4,
+                "height": 3
+              }
+            },
+            {
+              "definition": {
+                "title": "Total resource load time [median]",
+                "type": "query_value",
+                "requests": [
+                  {
+                    "formulas": [
+                      {
+                        "formula": "query1"
+                      }
+                    ],
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "$resourcePath $pathGroup $viewName $country $3rdPartyProvider $resourceKind $applicationName $service $env $version $applicationName $sessionType @type:resource"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "metric": "@resource.duration",
+                          "aggregation": "median"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": []
+                      }
+                    ]
+                  }
+                ],
+                "autoscale": true,
+                "precision": 2
+              },
+              "layout": {
+                "x": 4,
+                "y": 0,
+                "width": 4,
+                "height": 1
+              }
+            },
+            {
+              "definition": {
+                "title": "Total resource load time [P90]",
+                "type": "query_value",
+                "requests": [
+                  {
+                    "formulas": [
+                      {
+                        "formula": "query1"
+                      }
+                    ],
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "$resourcePath $pathGroup $viewName $country $3rdPartyProvider $resourceKind $applicationName $service $env $version $applicationName $sessionType @type:resource"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "metric": "@resource.duration",
+                          "aggregation": "pc90"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": []
+                      }
+                    ]
+                  }
+                ],
+                "autoscale": true,
+                "precision": 2
+              },
+              "layout": {
+                "x": 8,
+                "y": 0,
+                "width": 4,
+                "height": 1
+              }
+            },
+            {
+              "definition": {
+                "title": "Total resource load time [median and P90]",
+                "show_legend": false,
+                "legend_layout": "auto",
+                "legend_columns": [
+                  "avg",
+                  "min",
+                  "max",
+                  "value",
+                  "sum"
+                ],
+                "type": "timeseries",
+                "requests": [
+                  {
+                    "formulas": [
+                      {
+                        "formula": "query1"
+                      }
+                    ],
+                    "response_format": "timeseries",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "$resourcePath $pathGroup $viewName $country $3rdPartyProvider $resourceKind $applicationName $service $env $version $applicationName $sessionType @type:resource"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "metric": "@resource.duration",
+                          "aggregation": "median"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": []
+                      }
+                    ],
+                    "style": {
+                      "palette": "dog_classic",
+                      "line_type": "solid",
+                      "line_width": "normal"
+                    },
+                    "display_type": "line"
+                  },
+                  {
+                    "formulas": [
+                      {
+                        "formula": "query1"
+                      }
+                    ],
+                    "response_format": "timeseries",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "$resourcePath $pathGroup $viewName $country $3rdPartyProvider $resourceKind $applicationName $service $env $version $applicationName $sessionType @type:resource"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "metric": "@resource.duration",
+                          "aggregation": "pc90"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": []
+                      }
+                    ],
+                    "style": {
+                      "palette": "dog_classic",
+                      "line_type": "solid",
+                      "line_width": "normal"
+                    },
+                    "display_type": "line"
+                  }
+                ],
+                "yaxis": {
+                  "include_zero": true,
+                  "scale": "linear",
+                  "label": "",
+                  "min": "auto",
+                  "max": "auto"
+                }
+              },
+              "layout": {
+                "x": 4,
+                "y": 1,
+                "width": 8,
+                "height": 2
+              }
+            },
+            {
+              "definition": {
+                "title": "DNS lookup duration [median]",
+                "type": "query_value",
+                "requests": [
+                  {
+                    "formulas": [
+                      {
+                        "formula": "query1"
+                      }
+                    ],
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "data_source": "rum",
+                        "name": "query1",
+                        "search": {
+                          "query": "@type:resource $resourcePath $pathGroup $viewName $country $3rdPartyProvider $resourceKind $applicationName $service $env $version $applicationName $sessionType"
+                        },
+                        "indexes": [
+                          "*"
+                        ],
+                        "compute": {
+                          "aggregation": "median",
+                          "metric": "@resource.dns.duration"
+                        },
+                        "group_by": []
+                      }
+                    ]
+                  }
+                ],
+                "autoscale": true,
+                "precision": 2
+              },
+              "layout": {
+                "x": 0,
+                "y": 3,
+                "width": 3,
+                "height": 1
+              }
+            },
+            {
+              "definition": {
+                "title": "DNS lookup duration [P90]",
+                "type": "query_value",
+                "requests": [
+                  {
+                    "formulas": [
+                      {
+                        "formula": "query1"
+                      }
+                    ],
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "data_source": "rum",
+                        "name": "query1",
+                        "search": {
+                          "query": "@type:resource $resourcePath $pathGroup $viewName $country $3rdPartyProvider $resourceKind $applicationName $service $env $version $applicationName $sessionType"
+                        },
+                        "indexes": [
+                          "*"
+                        ],
+                        "compute": {
+                          "aggregation": "pc90",
+                          "metric": "@resource.dns.duration"
+                        },
+                        "group_by": []
+                      }
+                    ]
+                  }
+                ],
+                "autoscale": true,
+                "precision": 2
+              },
+              "layout": {
+                "x": 3,
+                "y": 3,
+                "width": 3,
+                "height": 1
+              }
+            },
+            {
+              "definition": {
+                "title": "Init. connection duration [median]",
+                "type": "query_value",
+                "requests": [
+                  {
+                    "formulas": [
+                      {
+                        "formula": "query1"
+                      }
+                    ],
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "data_source": "rum",
+                        "name": "query1",
+                        "search": {
+                          "query": "@type:resource $resourcePath $pathGroup $viewName $country $3rdPartyProvider $resourceKind $applicationName $service $env $version $applicationName $sessionType"
+                        },
+                        "indexes": [
+                          "*"
+                        ],
+                        "compute": {
+                          "aggregation": "median",
+                          "metric": "@resource.connect.duration"
+                        },
+                        "group_by": []
+                      }
+                    ]
+                  }
+                ],
+                "autoscale": true,
+                "precision": 2
+              },
+              "layout": {
+                "x": 6,
+                "y": 3,
+                "width": 3,
+                "height": 1
+              }
+            },
+            {
+              "definition": {
+                "title": "Init. connection duration [P90]",
+                "type": "query_value",
+                "requests": [
+                  {
+                    "formulas": [
+                      {
+                        "formula": "query1"
+                      }
+                    ],
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "data_source": "rum",
+                        "name": "query1",
+                        "search": {
+                          "query": "@type:resource $resourcePath $pathGroup $viewName $country $3rdPartyProvider $resourceKind $applicationName $service $env $version $applicationName $sessionType"
+                        },
+                        "indexes": [
+                          "*"
+                        ],
+                        "compute": {
+                          "aggregation": "pc90",
+                          "metric": "@resource.connect.duration"
+                        },
+                        "group_by": []
+                      }
+                    ]
+                  }
+                ],
+                "autoscale": true,
+                "precision": 2
+              },
+              "layout": {
+                "x": 9,
+                "y": 3,
+                "width": 3,
+                "height": 1
+              }
+            },
+            {
+              "definition": {
+                "title": "DNS lookup duration [median and P90]",
+                "show_legend": false,
+                "legend_layout": "auto",
+                "legend_columns": [
+                  "avg",
+                  "min",
+                  "max",
+                  "value",
+                  "sum"
+                ],
+                "type": "timeseries",
+                "requests": [
+                  {
+                    "formulas": [
+                      {
+                        "formula": "query1"
+                      }
+                    ],
+                    "queries": [
+                      {
+                        "data_source": "rum",
+                        "name": "query1",
+                        "search": {
+                          "query": "@type:resource $resourcePath $pathGroup $viewName $country $3rdPartyProvider $resourceKind $applicationName $service $env $version $applicationName $sessionType"
+                        },
+                        "indexes": [
+                          "*"
+                        ],
+                        "compute": {
+                          "aggregation": "median",
+                          "metric": "@resource.dns.duration"
+                        },
+                        "group_by": []
+                      }
+                    ],
+                    "response_format": "timeseries",
+                    "style": {
+                      "palette": "dog_classic",
+                      "line_type": "solid",
+                      "line_width": "normal"
+                    },
+                    "display_type": "line"
+                  },
+                  {
+                    "formulas": [
+                      {
+                        "formula": "query1"
+                      }
+                    ],
+                    "queries": [
+                      {
+                        "data_source": "rum",
+                        "name": "query1",
+                        "search": {
+                          "query": "@type:resource $resourcePath $pathGroup $viewName $country $3rdPartyProvider $resourceKind $applicationName $service $env $version $applicationName $sessionType"
+                        },
+                        "indexes": [
+                          "*"
+                        ],
+                        "compute": {
+                          "aggregation": "pc90",
+                          "metric": "@resource.dns.duration"
+                        },
+                        "group_by": []
+                      }
+                    ],
+                    "response_format": "timeseries",
+                    "style": {
+                      "palette": "dog_classic",
+                      "line_type": "solid",
+                      "line_width": "normal"
+                    },
+                    "display_type": "line"
+                  }
+                ],
+                "yaxis": {
+                  "include_zero": true,
+                  "scale": "linear",
+                  "label": "",
+                  "min": "auto",
+                  "max": "auto"
+                }
+              },
+              "layout": {
+                "x": 0,
+                "y": 4,
+                "width": 6,
+                "height": 2
+              }
+            },
+            {
+              "definition": {
+                "title": "Initial connection duration [median and P90]",
+                "show_legend": false,
+                "legend_layout": "auto",
+                "legend_columns": [
+                  "avg",
+                  "min",
+                  "max",
+                  "value",
+                  "sum"
+                ],
+                "type": "timeseries",
+                "requests": [
+                  {
+                    "formulas": [
+                      {
+                        "formula": "query1"
+                      }
+                    ],
+                    "queries": [
+                      {
+                        "data_source": "rum",
+                        "name": "query1",
+                        "search": {
+                          "query": "@type:resource $resourcePath $pathGroup $viewName $country $3rdPartyProvider $resourceKind $applicationName $service $env $version $applicationName $sessionType"
+                        },
+                        "indexes": [
+                          "*"
+                        ],
+                        "compute": {
+                          "aggregation": "median",
+                          "metric": "@resource.connect.duration"
+                        },
+                        "group_by": []
+                      }
+                    ],
+                    "response_format": "timeseries",
+                    "style": {
+                      "palette": "dog_classic",
+                      "line_type": "solid",
+                      "line_width": "normal"
+                    },
+                    "display_type": "line"
+                  },
+                  {
+                    "formulas": [
+                      {
+                        "formula": "query1"
+                      }
+                    ],
+                    "queries": [
+                      {
+                        "data_source": "rum",
+                        "name": "query1",
+                        "search": {
+                          "query": "@type:resource $resourcePath $pathGroup $viewName $country $3rdPartyProvider $resourceKind $applicationName $service $env $version $applicationName $sessionType"
+                        },
+                        "indexes": [
+                          "*"
+                        ],
+                        "compute": {
+                          "aggregation": "pc90",
+                          "metric": "@resource.connect.duration"
+                        },
+                        "group_by": []
+                      }
+                    ],
+                    "response_format": "timeseries",
+                    "style": {
+                      "palette": "dog_classic",
+                      "line_type": "solid",
+                      "line_width": "normal"
+                    },
+                    "display_type": "line"
+                  }
+                ],
+                "yaxis": {
+                  "include_zero": true,
+                  "scale": "linear",
+                  "label": "",
+                  "min": "auto",
+                  "max": "auto"
+                }
+              },
+              "layout": {
+                "x": 6,
+                "y": 4,
+                "width": 6,
+                "height": 2
+              }
+            },
+            {
+              "definition": {
+                "title": "Time to first byte [median]",
+                "type": "query_value",
+                "requests": [
+                  {
+                    "formulas": [
+                      {
+                        "formula": "query1"
+                      }
+                    ],
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "$resourcePath $pathGroup $viewName $country $3rdPartyProvider $resourceKind $applicationName $service $env $version $applicationName $sessionType @type:resource"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "metric": "@resource.first_byte.duration",
+                          "aggregation": "median"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": []
+                      }
+                    ]
+                  }
+                ],
+                "autoscale": true,
+                "precision": 2
+              },
+              "layout": {
+                "x": 0,
+                "y": 6,
+                "width": 3,
+                "height": 1
+              }
+            },
+            {
+              "definition": {
+                "title": "Time to first byte [P90]",
+                "type": "query_value",
+                "requests": [
+                  {
+                    "formulas": [
+                      {
+                        "formula": "query1"
+                      }
+                    ],
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "$resourcePath $pathGroup $viewName $country $3rdPartyProvider $resourceKind $applicationName $service $env $version $applicationName $sessionType @type:resource"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "metric": "@resource.first_byte.duration",
+                          "aggregation": "pc90"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": []
+                      }
+                    ]
+                  }
+                ],
+                "autoscale": true,
+                "precision": 2
+              },
+              "layout": {
+                "x": 3,
+                "y": 6,
+                "width": 3,
+                "height": 1
+              }
+            },
+            {
+              "definition": {
+                "title": "Download duration [median]",
+                "type": "query_value",
+                "requests": [
+                  {
+                    "formulas": [
+                      {
+                        "formula": "query1"
+                      }
+                    ],
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "$resourcePath $pathGroup $viewName $country $3rdPartyProvider $resourceKind $applicationName $service $env $version $applicationName $sessionType @type:resource"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "metric": "@resource.download.duration",
+                          "aggregation": "median"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": []
+                      }
+                    ]
+                  }
+                ],
+                "autoscale": true,
+                "precision": 2
+              },
+              "layout": {
+                "x": 6,
+                "y": 6,
+                "width": 3,
+                "height": 1
+              }
+            },
+            {
+              "definition": {
+                "title": "Download duration [P90]",
+                "type": "query_value",
+                "requests": [
+                  {
+                    "formulas": [
+                      {
+                        "formula": "query1"
+                      }
+                    ],
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "$resourcePath $pathGroup $viewName $country $3rdPartyProvider $resourceKind $applicationName $service $env $version $applicationName $sessionType @type:resource"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "metric": "@resource.download.duration",
+                          "aggregation": "pc90"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": []
+                      }
+                    ]
+                  }
+                ],
+                "autoscale": true,
+                "precision": 2
+              },
+              "layout": {
+                "x": 9,
+                "y": 6,
+                "width": 3,
+                "height": 1
+              }
+            },
+            {
+              "definition": {
+                "title": "Time to first byte [median and P90]",
+                "show_legend": false,
+                "legend_layout": "auto",
+                "legend_columns": [
+                  "avg",
+                  "min",
+                  "max",
+                  "value",
+                  "sum"
+                ],
+                "type": "timeseries",
+                "requests": [
+                  {
+                    "formulas": [
+                      {
+                        "formula": "query1"
+                      }
+                    ],
+                    "response_format": "timeseries",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "$resourcePath $pathGroup $viewName $country $3rdPartyProvider $resourceKind $applicationName $service $env $version $applicationName $sessionType @type:resource"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "metric": "@resource.first_byte.duration",
+                          "aggregation": "median"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": []
+                      }
+                    ],
+                    "style": {
+                      "palette": "dog_classic",
+                      "line_type": "solid",
+                      "line_width": "normal"
+                    },
+                    "display_type": "line"
+                  },
+                  {
+                    "formulas": [
+                      {
+                        "formula": "query1"
+                      }
+                    ],
+                    "response_format": "timeseries",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "$resourcePath $pathGroup $viewName $country $3rdPartyProvider $resourceKind $applicationName $service $env $version $applicationName $sessionType @type:resource"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "metric": "@resource.first_byte.duration",
+                          "aggregation": "pc90"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": []
+                      }
+                    ],
+                    "style": {
+                      "palette": "dog_classic",
+                      "line_type": "solid",
+                      "line_width": "normal"
+                    },
+                    "display_type": "line"
+                  }
+                ],
+                "yaxis": {
+                  "include_zero": true,
+                  "scale": "linear",
+                  "label": "",
+                  "min": "auto",
+                  "max": "auto"
+                }
+              },
+              "layout": {
+                "x": 0,
+                "y": 7,
+                "width": 6,
+                "height": 2
+              }
+            },
+            {
+              "definition": {
+                "title": "Download duration [median and P90] ",
+                "show_legend": false,
+                "legend_layout": "auto",
+                "legend_columns": [
+                  "avg",
+                  "min",
+                  "max",
+                  "value",
+                  "sum"
+                ],
+                "type": "timeseries",
+                "requests": [
+                  {
+                    "formulas": [
+                      {
+                        "formula": "query1"
+                      }
+                    ],
+                    "response_format": "timeseries",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "$resourcePath $pathGroup $viewName $country $3rdPartyProvider $resourceKind $applicationName $service $env $version $applicationName $sessionType @type:resource"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "metric": "@resource.download.duration",
+                          "aggregation": "median"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": []
+                      }
+                    ],
+                    "style": {
+                      "palette": "dog_classic",
+                      "line_type": "solid",
+                      "line_width": "normal"
+                    },
+                    "display_type": "line"
+                  },
+                  {
+                    "formulas": [
+                      {
+                        "formula": "query1"
+                      }
+                    ],
+                    "response_format": "timeseries",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "$resourcePath $pathGroup $viewName $country $3rdPartyProvider $resourceKind $applicationName $service $env $version $applicationName $sessionType @type:resource"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "metric": "@resource.download.duration",
+                          "aggregation": "pc90"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": []
+                      }
+                    ],
+                    "style": {
+                      "palette": "dog_classic",
+                      "line_type": "solid",
+                      "line_width": "normal"
+                    },
+                    "display_type": "line"
+                  }
+                ],
+                "yaxis": {
+                  "include_zero": true,
+                  "scale": "linear",
+                  "label": "",
+                  "min": "auto",
+                  "max": "auto"
+                }
+              },
+              "layout": {
+                "x": 6,
+                "y": 7,
+                "width": 6,
+                "height": 2
+              }
+            }
+          ]
+        },
+        "layout": {
+          "x": 0,
+          "y": 15,
+          "width": 12,
+          "height": 10,
+          "is_column_break": true
+        }
+      },
+      {
+        "definition": {
+          "title": "3rd Party Resources",
+          "background_color": "vivid_purple",
+          "show_title": true,
+          "type": "group",
+          "layout_type": "ordered",
+          "widgets": [
+            {
+              "definition": {
+                "title": "Resource load times for 3rd party providers [median and p90]",
+                "type": "query_table",
+                "requests": [
+                  {
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "data_source": "rum",
+                        "name": "query1",
+                        "search": {
+                          "query": "-@resource.provider.type:\"first party\" $resourcePath $pathGroup $viewName $country $3rdPartyProvider $resourceKind $applicationName $service $env $version $applicationName $sessionType @type:resource"
+                        },
+                        "indexes": [
+                          "*"
+                        ],
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "group_by": [
+                          {
+                            "facet": "@resource.provider.domain",
+                            "limit": 1000,
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "data_source": "rum",
+                        "name": "query2",
+                        "search": {
+                          "query": "-@resource.provider.type:\"first party\" $resourcePath $pathGroup $viewName $country $3rdPartyProvider $resourceKind $applicationName $service $env $version $applicationName $sessionType @type:resource"
+                        },
+                        "indexes": [
+                          "*"
+                        ],
+                        "compute": {
+                          "aggregation": "median",
+                          "metric": "@resource.duration"
+                        },
+                        "group_by": [
+                          {
+                            "facet": "@resource.provider.domain",
+                            "limit": 1000,
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "data_source": "rum",
+                        "name": "query3",
+                        "search": {
+                          "query": "-@resource.provider.type:\"first party\" $resourcePath $pathGroup $viewName $country $3rdPartyProvider $resourceKind $applicationName $service $env $version $applicationName $sessionType @type:resource"
+                        },
+                        "indexes": [
+                          "*"
+                        ],
+                        "compute": {
+                          "aggregation": "pc90",
+                          "metric": "@resource.duration"
+                        },
+                        "group_by": [
+                          {
+                            "facet": "@resource.provider.domain",
+                            "limit": 1000,
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            }
+                          }
+                        ]
+                      }
+                    ],
+                    "sort": {
+                      "order_by": [
+                        {
+                          "type": "formula",
+                          "index": 0,
+                          "order": "desc"
+                        }
+                      ]
+                    },
+                    "formulas": [
+                      {
+                        "alias": "Count",
+                        "formula": "query1"
+                      },
+                      {
+                        "alias": "Median Load time",
+                        "formula": "query2"
+                      },
+                      {
+                        "alias": "PC90 load time",
+                        "formula": "query3"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "layout": {
+                "x": 0,
+                "y": 0,
+                "width": 7,
+                "height": 5
+              }
+            },
+            {
+              "definition": {
+                "title": "Resource load times for 3rd and 1st party providers [p90]",
+                "show_legend": true,
+                "legend_layout": "auto",
+                "legend_columns": [
+                  "avg",
+                  "min",
+                  "max",
+                  "value",
+                  "sum"
+                ],
+                "type": "timeseries",
+                "requests": [
+                  {
+                    "formulas": [
+                      {
+                        "alias": "1st party PC90 load time",
+                        "formula": "query3"
+                      },
+                      {
+                        "alias": "3rd party PC90 load time",
+                        "formula": "query1"
+                      }
+                    ],
+                    "response_format": "timeseries",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "@resource.provider.type:\"first party\" $resourcePath $pathGroup $viewName $country $3rdPartyProvider $resourceKind $applicationName $service $env $version $applicationName $sessionType @type:resource"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "metric": "@resource.duration",
+                          "aggregation": "pc90"
+                        },
+                        "name": "query3",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": []
+                      },
+                      {
+                        "search": {
+                          "query": "-@resource.provider.type:\"first party\" $resourcePath $pathGroup $viewName $country $3rdPartyProvider $resourceKind $applicationName $service $env $version $applicationName $sessionType @type:resource"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "metric": "@resource.duration",
+                          "aggregation": "pc90"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": []
+                      }
+                    ],
+                    "style": {
+                      "palette": "dog_classic",
+                      "line_type": "solid",
+                      "line_width": "normal"
+                    },
+                    "display_type": "line"
+                  }
+                ]
+              },
+              "layout": {
+                "x": 7,
+                "y": 0,
+                "width": 5,
+                "height": 2
+              }
+            },
+            {
+              "definition": {
+                "title": "Share of 3rd party providers",
+                "requests": [
+                  {
+                    "style": {
+                      "palette": "datadog16"
+                    },
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "$resourcePath $pathGroup $viewName $country $3rdPartyProvider $resourceKind $applicationName $service $env $version $applicationName $sessionType -@resource.provider.type:\"first party\" @type:resource"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "name": "query3",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@resource.provider.domain",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 10
+                          }
+                        ]
+                      }
+                    ],
+                    "formulas": [
+                      {
+                        "formula": "query3"
+                      }
+                    ],
+                    "sort": {
+                      "order_by": [
+                        {
+                          "type": "formula",
+                          "index": 0,
+                          "order": "desc"
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "type": "sunburst"
+              },
+              "layout": {
+                "x": 7,
+                "y": 2,
+                "width": 5,
+                "height": 3
+              }
+            }
+          ]
+        },
+        "layout": {
+          "x": 0,
+          "y": 25,
+          "width": 12,
+          "height": 6
+        }
+      }
+    ],
+    "template_variables": [
+      {
+        "name": "sessionType",
+        "prefix": "@session.type",
+        "available_values": [],
+        "default": "user"
+      },
+      {
+        "name": "applicationName",
+        "prefix": "@application.name",
+        "available_values": [],
+        "default": "*"
+      },
+      {
+        "name": "resourcePath",
+        "prefix": "@resource.url_path",
+        "available_values": [],
+        "default": "*"
+      },
+      {
+        "name": "resourceKind",
+        "prefix": "@resource.type",
+        "available_values": [],
+        "default": "*"
+      },
+      {
+        "name": "pathGroup",
+        "prefix": "@view.url_path_group",
+        "available_values": [],
+        "default": "*"
+      },
+      {
+        "name": "3rdPartyProvider",
+        "prefix": "@resource.provider.name",
+        "available_values": [],
+        "default": "*"
+      },
+      {
+        "name": "viewName",
+        "prefix": "@view.name",
+        "available_values": [],
+        "default": "*"
+      },
+      {
+        "name": "country",
+        "prefix": "@geo.country",
+        "available_values": [],
+        "default": "*"
+      },
+      {
+        "name": "version",
+        "prefix": "version",
+        "available_values": [],
+        "default": "*"
+      },
+      {
+        "name": "service",
+        "prefix": "service",
+        "available_values": [],
+        "default": "*"
+      },
+      {
+        "name": "env",
+        "prefix": "env",
+        "available_values": [],
+        "default": "*"
+      }
+    ],
+    "layout_type": "ordered",
+    "notify_list": [],
+    "reflow_type": "fixed"
+  }
+EOF
+}
