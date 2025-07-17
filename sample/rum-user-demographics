@@ -1,0 +1,1287 @@
+resource "datadog_dashboard_json" "rum-user-demographics"{
+  dashboard = <<EOF
+{
+    "title": "${var.client} - ${var.project} - User Demographics",
+    "description": "## RUM User Demographics\n\nEste panel ofrece una comprensión profunda de la distribución geográfica de tus usuarios.\n\n-   **Datos globales:** Proporciona una perspectiva general sobre la ubicación de tus usuarios, identificando los países, regiones y ciudades con mayor uso de tu aplicación.\n-   **Comparación por ubicación:** Permite analizar las diferencias en la experiencia de usuario según el con",
+    "widgets": [
+      {
+        "definition": {
+          "title": "Overview",
+          "background_color": "vivid_purple",
+          "show_title": true,
+          "type": "group",
+          "layout_type": "ordered",
+          "widgets": [
+            {
+              "definition": {
+                "title": "Total countries",
+                "type": "query_value",
+                "requests": [
+                  {
+                    "formulas": [
+                      {
+                        "formula": "query1"
+                      }
+                    ],
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "$version $env $service $os $deviceType $applicationName $sessionType $browser @type:session"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "metric": "@geo.country",
+                          "aggregation": "cardinality"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": []
+                      }
+                    ]
+                  }
+                ],
+                "autoscale": true,
+                "precision": 2
+              },
+              "layout": {
+                "x": 0,
+                "y": 0,
+                "width": 2,
+                "height": 3
+              }
+            },
+            {
+              "definition": {
+                "title": "Sessions by country",
+                "type": "toplist",
+                "requests": [
+                  {
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "@type:session $version $env $service $os $deviceType $applicationName $sessionType $browser"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@geo.country",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 10
+                          }
+                        ]
+                      }
+                    ],
+                    "formulas": [
+                      {
+                        "formula": "query1"
+                      }
+                    ],
+                    "sort": {
+                      "order_by": [
+                        {
+                          "type": "formula",
+                          "index": 0,
+                          "order": "desc"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              "layout": {
+                "x": 2,
+                "y": 0,
+                "width": 4,
+                "height": 3
+              }
+            },
+            {
+              "definition": {
+                "title": "Live user sessions by country",
+                "title_size": "16",
+                "title_align": "left",
+                "time": {
+                  "live_span": "4h"
+                },
+                "requests": [
+                  {
+                    "style": {
+                      "palette": "classic"
+                    },
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "@session.is_active:true $service $version $deviceType $os $env $applicationName $sessionType $browser @type:session"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "metric": "@session.id",
+                          "aggregation": "cardinality"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@geo.country",
+                            "sort": {
+                              "metric": "@session.id",
+                              "aggregation": "cardinality",
+                              "order": "desc"
+                            },
+                            "limit": 10
+                          }
+                        ]
+                      }
+                    ],
+                    "formulas": [
+                      {
+                        "formula": "query1"
+                      }
+                    ]
+                  }
+                ],
+                "type": "sunburst"
+              },
+              "layout": {
+                "x": 6,
+                "y": 0,
+                "width": 6,
+                "height": 3
+              }
+            }
+          ]
+        },
+        "layout": {
+          "x": 0,
+          "y": 0,
+          "width": 12,
+          "height": 4
+        }
+      },
+      {
+        "definition": {
+          "title": "Global Data",
+          "background_color": "vivid_purple",
+          "show_title": true,
+          "type": "group",
+          "layout_type": "ordered",
+          "widgets": [
+            {
+              "definition": {
+                "title": "Usage by country subdivision",
+                "title_size": "16",
+                "title_align": "left",
+                "requests": [
+                  {
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "@type:session $service $env $version $os $deviceType $applicationName $sessionType $browser"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@geo.continent",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 10
+                          },
+                          {
+                            "facet": "@geo.country",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 10
+                          },
+                          {
+                            "facet": "@geo.country_subdivision",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 10
+                          }
+                        ]
+                      }
+                    ],
+                    "formulas": [
+                      {
+                        "formula": "query1"
+                      }
+                    ]
+                  }
+                ],
+                "type": "sunburst"
+              },
+              "layout": {
+                "x": 0,
+                "y": 0,
+                "width": 12,
+                "height": 4
+              }
+            },
+            {
+              "definition": {
+                "title": "Sessions by country",
+                "title_size": "16",
+                "title_align": "left",
+                "type": "geomap",
+                "requests": [
+                  {
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "@type:session $service $env $version $os $deviceType $applicationName $sessionType $browser"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@geo.country_iso_code",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 250
+                          }
+                        ]
+                      }
+                    ],
+                    "formulas": [
+                      {
+                        "formula": "query1"
+                      }
+                    ],
+                    "sort": {
+                      "order_by": [
+                        {
+                          "type": "formula",
+                          "index": 0,
+                          "order": "desc"
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "style": {
+                  "palette": "hostmap_blues",
+                  "palette_flip": false
+                },
+                "view": {
+                  "focus": "WORLD"
+                }
+              },
+              "layout": {
+                "x": 0,
+                "y": 4,
+                "width": 5,
+                "height": 4
+              }
+            },
+            {
+              "definition": {
+                "title": "Sessions by cities",
+                "title_size": "16",
+                "title_align": "left",
+                "type": "toplist",
+                "requests": [
+                  {
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "@type:session $service $env $version $applicationName $os $deviceType $sessionType $browser"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@geo.city",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 10
+                          }
+                        ]
+                      }
+                    ],
+                    "formulas": [
+                      {
+                        "formula": "query1"
+                      }
+                    ],
+                    "sort": {
+                      "order_by": [
+                        {
+                          "type": "formula",
+                          "index": 0,
+                          "order": "desc"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              "layout": {
+                "x": 5,
+                "y": 4,
+                "width": 3,
+                "height": 4
+              }
+            },
+            {
+              "definition": {
+                "title": "Country usage change compared to last week",
+                "title_size": "16",
+                "title_align": "left",
+                "time": {
+                  "live_span": "1w"
+                },
+                "type": "change",
+                "requests": [
+                  {
+                    "formulas": [
+                      {
+                        "formula": "week_before(query1)"
+                      },
+                      {
+                        "formula": "query1"
+                      }
+                    ],
+                    "change_type": "relative",
+                    "order_dir": "desc",
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "@type:session $service $env $version $os $deviceType $applicationName $sessionType $browser"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@geo.country",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 25
+                          }
+                        ]
+                      }
+                    ],
+                    "order_by": "change"
+                  }
+                ]
+              },
+              "layout": {
+                "x": 8,
+                "y": 4,
+                "width": 4,
+                "height": 4
+              }
+            }
+          ]
+        },
+        "layout": {
+          "x": 0,
+          "y": 4,
+          "width": 12,
+          "height": 9
+        }
+      },
+      {
+        "definition": {
+          "title": "Compare Continents",
+          "background_color": "vivid_purple",
+          "show_title": true,
+          "type": "group",
+          "layout_type": "ordered",
+          "widgets": [
+            {
+              "definition": {
+                "title": "Frustration count, load time, errors per continent",
+                "title_size": "16",
+                "title_align": "left",
+                "type": "query_table",
+                "requests": [
+                  {
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "@type:session $service $env $version $applicationName $os $deviceType $sessionType $browser"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@geo.continent",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 10
+                          }
+                        ]
+                      },
+                      {
+                        "search": {
+                          "query": "@type:session $service $env $version $applicationName $os $deviceType $sessionType $browser"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "metric": "@session.frustration.count",
+                          "aggregation": "avg"
+                        },
+                        "name": "query2",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@geo.continent",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 10
+                          }
+                        ]
+                      },
+                      {
+                        "search": {
+                          "query": "@type:view $service $env $version $applicationName $os $deviceType $sessionType $browser"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "metric": "@view.loading_time",
+                          "aggregation": "avg"
+                        },
+                        "name": "query3",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@geo.continent",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 10
+                          }
+                        ]
+                      },
+                      {
+                        "search": {
+                          "query": "@type:view $service $env $version $applicationName $os $deviceType $sessionType $browser"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "name": "query4",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@geo.continent",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 10
+                          }
+                        ]
+                      },
+                      {
+                        "search": {
+                          "query": "@type:view $service $env $version $applicationName $os $deviceType $sessionType @view.error.count:>0 $browser"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "name": "query5",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@geo.continent",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 10
+                          }
+                        ]
+                      }
+                    ],
+                    "sort": {
+                      "order_by": [
+                        {
+                          "type": "formula",
+                          "index": 0,
+                          "order": "desc"
+                        }
+                      ]
+                    },
+                    "formulas": [
+                      {
+                        "alias": "Sessions",
+                        "cell_display_mode": "bar",
+                        "formula": "query1"
+                      },
+                      {
+                        "alias": "Frustration count",
+                        "cell_display_mode": "bar",
+                        "formula": "query2"
+                      },
+                      {
+                        "alias": "View load time",
+                        "cell_display_mode": "bar",
+                        "formula": "query3"
+                      },
+                      {
+                        "alias": "Error rate - percentage",
+                        "conditional_formats": [
+                          {
+                            "palette": "red_on_white",
+                            "comparator": ">",
+                            "value": 0
+                          }
+                        ],
+                        "cell_display_mode": "bar",
+                        "formula": "(1 - (query4 - query5) / query4) * 100"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "layout": {
+                "x": 0,
+                "y": 0,
+                "width": 12,
+                "height": 3
+              }
+            }
+          ]
+        },
+        "layout": {
+          "x": 0,
+          "y": 13,
+          "width": 12,
+          "height": 4,
+          "is_column_break": true
+        }
+      },
+      {
+        "definition": {
+          "title": "Compare Countries",
+          "background_color": "vivid_purple",
+          "show_title": true,
+          "type": "group",
+          "layout_type": "ordered",
+          "widgets": [
+            {
+              "definition": {
+                "title": "Error rate",
+                "title_size": "16",
+                "title_align": "left",
+                "type": "geomap",
+                "requests": [
+                  {
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "@type:view $service $env $version $applicationName $os $deviceType $sessionType $browser"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@geo.country_iso_code",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 500
+                          }
+                        ]
+                      },
+                      {
+                        "search": {
+                          "query": "@type:view $service $env $version $applicationName $os $deviceType $sessionType view @view.error.count:>0 $browser"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "name": "query2",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@geo.country_iso_code",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 500
+                          }
+                        ]
+                      }
+                    ],
+                    "formulas": [
+                      {
+                        "formula": "(1 - (query1 - query2) / query1) * 100"
+                      }
+                    ],
+                    "sort": {
+                      "order_by": [
+                        {
+                          "type": "formula",
+                          "index": 0,
+                          "order": "desc"
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "style": {
+                  "palette": "green_to_orange",
+                  "palette_flip": false
+                },
+                "view": {
+                  "focus": "WORLD"
+                }
+              },
+              "layout": {
+                "x": 0,
+                "y": 0,
+                "width": 5,
+                "height": 3
+              }
+            },
+            {
+              "definition": {
+                "title": "Error rate",
+                "title_size": "16",
+                "title_align": "left",
+                "type": "query_table",
+                "requests": [
+                  {
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "@type:view $service $env $version $applicationName $os $deviceType $sessionType $browser"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@geo.country",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 15
+                          },
+                          {
+                            "facet": "@geo.country_iso_code",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 15
+                          }
+                        ]
+                      },
+                      {
+                        "search": {
+                          "query": "@type:view $service $env $version $applicationName $os $deviceType $sessionType @view.error.count:>0 $browser"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "name": "query2",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@geo.country",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 15
+                          },
+                          {
+                            "facet": "@geo.country_iso_code",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 15
+                          }
+                        ]
+                      }
+                    ],
+                    "sort": {
+                      "order_by": [
+                        {
+                          "type": "formula",
+                          "index": 0,
+                          "order": "desc"
+                        }
+                      ]
+                    },
+                    "formulas": [
+                      {
+                        "alias": "Error rate",
+                        "conditional_formats": [
+                          {
+                            "palette": "red_on_white",
+                            "comparator": ">",
+                            "value": 0
+                          }
+                        ],
+                        "cell_display_mode": "bar",
+                        "formula": "(1 - (query1 - query2) / query1) * 100"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "layout": {
+                "x": 5,
+                "y": 0,
+                "width": 4,
+                "height": 3
+              }
+            },
+            {
+              "definition": {
+                "type": "note",
+                "content": "**Error rate** is calculated by comparing the number of views that contain errors to the number of views without any errors. ",
+                "background_color": "yellow",
+                "font_size": "14",
+                "text_align": "left",
+                "vertical_align": "center",
+                "show_tick": true,
+                "tick_pos": "50%",
+                "tick_edge": "left",
+                "has_padding": true
+              },
+              "layout": {
+                "x": 9,
+                "y": 0,
+                "width": 3,
+                "height": 3
+              }
+            },
+            {
+              "definition": {
+                "title": "Frustration rate",
+                "title_size": "16",
+                "title_align": "left",
+                "type": "geomap",
+                "requests": [
+                  {
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "@type:action $service $env $version $applicationName $os $deviceType $sessionType @action.frustration.type:* $browser"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@geo.country_iso_code",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 500
+                          }
+                        ]
+                      },
+                      {
+                        "search": {
+                          "query": "@type:action $service $env $version $applicationName $os $deviceType $sessionType $browser"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "name": "query2",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@geo.country_iso_code",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 500
+                          }
+                        ]
+                      }
+                    ],
+                    "formulas": [
+                      {
+                        "formula": "query1 / query2 * 100"
+                      }
+                    ],
+                    "sort": {
+                      "order_by": [
+                        {
+                          "type": "formula",
+                          "index": 0,
+                          "order": "desc"
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "style": {
+                  "palette": "green_to_orange",
+                  "palette_flip": false
+                },
+                "view": {
+                  "focus": "WORLD"
+                }
+              },
+              "layout": {
+                "x": 0,
+                "y": 3,
+                "width": 5,
+                "height": 3
+              }
+            },
+            {
+              "definition": {
+                "title": "Frustration rate",
+                "title_size": "16",
+                "title_align": "left",
+                "type": "query_table",
+                "requests": [
+                  {
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "@type:action $service $env $version $applicationName $os $deviceType $sessionType $browser @action.frustration.type:*"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@geo.country",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 15
+                          },
+                          {
+                            "facet": "@geo.country_iso_code",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 15
+                          }
+                        ]
+                      },
+                      {
+                        "search": {
+                          "query": "@type:action $service $env $version $applicationName $os $deviceType $sessionType $browser"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "name": "query2",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@geo.country",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 15
+                          },
+                          {
+                            "facet": "@geo.country_iso_code",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 15
+                          }
+                        ]
+                      }
+                    ],
+                    "sort": {
+                      "order_by": [
+                        {
+                          "type": "formula",
+                          "index": 0,
+                          "order": "desc"
+                        }
+                      ]
+                    },
+                    "formulas": [
+                      {
+                        "alias": "Frustration rate",
+                        "cell_display_mode": "bar",
+                        "formula": "query1 / query2 * 100"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "layout": {
+                "x": 5,
+                "y": 3,
+                "width": 4,
+                "height": 3
+              }
+            },
+            {
+              "definition": {
+                "type": "note",
+                "content": "**Frustration rate** is calculated by comparing the number of actions that generated at least one frustration signal to the total number of actions in a country.",
+                "background_color": "yellow",
+                "font_size": "14",
+                "text_align": "left",
+                "vertical_align": "center",
+                "show_tick": true,
+                "tick_pos": "50%",
+                "tick_edge": "left",
+                "has_padding": true
+              },
+              "layout": {
+                "x": 9,
+                "y": 3,
+                "width": 3,
+                "height": 3
+              }
+            },
+            {
+              "definition": {
+                "title": "Longest load times by view",
+                "title_size": "16",
+                "title_align": "left",
+                "type": "geomap",
+                "requests": [
+                  {
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "@type:view $service $env $version $applicationName $os $deviceType $sessionType $browser"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "metric": "@view.loading_time",
+                          "aggregation": "avg"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@geo.country_iso_code",
+                            "sort": {
+                              "metric": "@view.loading_time",
+                              "aggregation": "avg",
+                              "order": "desc"
+                            },
+                            "limit": 500
+                          }
+                        ]
+                      }
+                    ],
+                    "formulas": [
+                      {
+                        "formula": "query1"
+                      }
+                    ],
+                    "sort": {
+                      "order_by": [
+                        {
+                          "type": "formula",
+                          "index": 0,
+                          "order": "desc"
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "style": {
+                  "palette": "green_to_orange",
+                  "palette_flip": false
+                },
+                "view": {
+                  "focus": "WORLD"
+                }
+              },
+              "layout": {
+                "x": 0,
+                "y": 6,
+                "width": 5,
+                "height": 3
+              }
+            },
+            {
+              "definition": {
+                "title": "Load times",
+                "title_size": "16",
+                "title_align": "left",
+                "type": "query_table",
+                "requests": [
+                  {
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "@type:view $service $env $version $applicationName $os $deviceType $sessionType $browser"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "metric": "@view.loading_time",
+                          "aggregation": "avg"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@geo.country",
+                            "sort": {
+                              "metric": "@view.loading_time",
+                              "aggregation": "avg",
+                              "order": "desc"
+                            },
+                            "limit": 15
+                          },
+                          {
+                            "facet": "@geo.country_iso_code",
+                            "sort": {
+                              "metric": "@view.loading_time",
+                              "aggregation": "avg",
+                              "order": "desc"
+                            },
+                            "limit": 15
+                          }
+                        ]
+                      }
+                    ],
+                    "sort": {
+                      "order_by": [
+                        {
+                          "type": "formula",
+                          "index": 0,
+                          "order": "desc"
+                        }
+                      ]
+                    },
+                    "formulas": [
+                      {
+                        "alias": "Load time",
+                        "cell_display_mode": "bar",
+                        "formula": "query1"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "layout": {
+                "x": 5,
+                "y": 6,
+                "width": 4,
+                "height": 3
+              }
+            },
+            {
+              "definition": {
+                "type": "note",
+                "content": "**Load time** is a RUM data attribute for the time until the page is ready and no network request or DOM mutation is currently occurring.\n",
+                "background_color": "yellow",
+                "font_size": "14",
+                "text_align": "left",
+                "vertical_align": "center",
+                "show_tick": true,
+                "tick_pos": "50%",
+                "tick_edge": "left",
+                "has_padding": true
+              },
+              "layout": {
+                "x": 9,
+                "y": 6,
+                "width": 3,
+                "height": 3
+              }
+            }
+          ]
+        },
+        "layout": {
+          "x": 0,
+          "y": 17,
+          "width": 12,
+          "height": 10
+        }
+      }
+    ],
+    "template_variables": [
+      {
+        "name": "sessionType",
+        "prefix": "@session.type",
+        "available_values": [],
+        "default": "user"
+      },
+      {
+        "name": "applicationName",
+        "prefix": "@application.name",
+        "available_values": [],
+        "default": "*"
+      },
+      {
+        "name": "deviceType",
+        "prefix": "@device.type",
+        "available_values": [],
+        "default": "*"
+      },
+      {
+        "name": "version",
+        "prefix": "version",
+        "available_values": [],
+        "default": "*"
+      },
+      {
+        "name": "browser",
+        "prefix": "@browser.name",
+        "available_values": [],
+        "default": "*"
+      },
+      {
+        "name": "os",
+        "prefix": "@os.name",
+        "available_values": [],
+        "default": "*"
+      },
+      {
+        "name": "service",
+        "prefix": "service",
+        "available_values": [],
+        "default": "*"
+      },
+      {
+        "name": "env",
+        "prefix": "env",
+        "available_values": [],
+        "default": "*"
+      }
+    ],
+    "layout_type": "ordered",
+    "notify_list": [],
+    "reflow_type": "fixed"
+  }
+EOF
+}
