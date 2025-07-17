@@ -1,0 +1,962 @@
+resource "datadog_dashboard_json" "rum-synthetics"{
+  dashboard = <<EOF
+  {
+    "title": "${var.client} - ${var.project} - Synthetics Monitoring",
+    "description": "## Synthetics Monitoring\nEn este dashboard puedes visualizar el estado, rendimiento e historial de ejecución de pruebas sintéticas, ya sean de tipo **HTTP/API** o **Browser**. \nSu objetivo es ofrecer **visibilidad en tiempo real** y **análisis histórico** sobre la disponibilidad y funcionalidad de los servicios monitorizados desde la perspectiva del usuario final.",
+    "widgets": [
+      {
+        "definition": {
+          "title": "New group",
+          "background_color": "vivid_purple",
+          "show_title": true,
+          "type": "group",
+          "layout_type": "ordered",
+          "widgets": [
+            {
+              "definition": {
+                "title": "Synthetic test success rate",
+                "title_size": "16",
+                "title_align": "left",
+                "type": "query_value",
+                "requests": [
+                  {
+                    "formulas": [
+                      {
+                        "formula": "query1 / query2 * 100"
+                      }
+                    ],
+                    "conditional_formats": [
+                      {
+                        "comparator": "<=",
+                        "palette": "white_on_yellow",
+                        "value": 70
+                      },
+                      {
+                        "comparator": ">",
+                        "palette": "white_on_green",
+                        "value": 70
+                      },
+                      {
+                        "comparator": "<=",
+                        "palette": "white_on_red",
+                        "value": 50
+                      }
+                    ],
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "query": "sum:synthetics.test_runs{status:success,$TestID,$Browser,$Env,$Team,$Service,$Region}.as_count()",
+                        "data_source": "metrics",
+                        "name": "query1",
+                        "aggregator": "sum"
+                      },
+                      {
+                        "query": "sum:synthetics.test_runs{$TestID,$Browser,$Env,$Team,$Service,$Region}.as_count()",
+                        "data_source": "metrics",
+                        "name": "query2",
+                        "aggregator": "sum"
+                      }
+                    ]
+                  }
+                ],
+                "autoscale": true,
+                "custom_unit": "%",
+                "custom_links": [
+                  {
+                    "override_label": "containers",
+                    "is_hidden": true
+                  },
+                  {
+                    "override_label": "hosts",
+                    "is_hidden": true
+                  },
+                  {
+                    "override_label": "logs",
+                    "is_hidden": true
+                  },
+                  {
+                    "override_label": "traces",
+                    "is_hidden": true
+                  },
+                  {
+                    "override_label": "profiles",
+                    "is_hidden": true
+                  },
+                  {
+                    "override_label": "rum",
+                    "is_hidden": false,
+                    "link": "/rum/explorer?live=false&from_ts={{timestamp_start}}&to_ts={{timestamp_end}}&query=type:session @session.type:synthetics"
+                  },
+                  {
+                    "link": "/synthetics/tests?from_ts={{timestamp_start}}&to_ts={{timestamp_end}}{{timestamp_start}}",
+                    "label": "View in Synthetics"
+                  }
+                ],
+                "precision": 2
+              },
+              "layout": {
+                "x": 0,
+                "y": 0,
+                "width": 3,
+                "height": 2
+              }
+            },
+            {
+              "definition": {
+                "title": "Synthetic estimated usage total test runs",
+                "title_size": "16",
+                "title_align": "left",
+                "type": "query_value",
+                "requests": [
+                  {
+                    "formulas": [
+                      {
+                        "formula": "query1 + query2"
+                      }
+                    ],
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "query": "sum:datadog.estimated_usage.synthetics.api_test_runs{$TestID,$Browser,$Env,$Team,$Service,$Region}.as_count()",
+                        "data_source": "metrics",
+                        "name": "query1",
+                        "aggregator": "sum"
+                      },
+                      {
+                        "query": "sum:datadog.estimated_usage.synthetics.browser_test_runs{$TestID,$Browser,$Env,$Team,$Service,$Region}.as_count()",
+                        "data_source": "metrics",
+                        "name": "query2",
+                        "aggregator": "sum"
+                      }
+                    ]
+                  }
+                ],
+                "autoscale": true,
+                "custom_links": [
+                  {
+                    "override_label": "rum",
+                    "is_hidden": false,
+                    "link": "/rum/explorer?live=false&from_ts={{timestamp_start}}&to_ts={{timestamp_end}}&query=@session.type:synthetics"
+                  },
+                  {
+                    "override_label": "containers",
+                    "is_hidden": true
+                  },
+                  {
+                    "override_label": "hosts",
+                    "is_hidden": true
+                  },
+                  {
+                    "override_label": "logs",
+                    "is_hidden": true
+                  },
+                  {
+                    "override_label": "traces",
+                    "is_hidden": true
+                  },
+                  {
+                    "override_label": "profiles",
+                    "is_hidden": true
+                  },
+                  {
+                    "link": "/synthetics/tests?from_ts={{timestamp_start}}&to_ts={{timestamp_end}}{{timestamp_start}}",
+                    "label": "View in Synthetics"
+                  }
+                ],
+                "precision": 2
+              },
+              "layout": {
+                "x": 3,
+                "y": 0,
+                "width": 3,
+                "height": 2
+              }
+            },
+            {
+              "definition": {
+                "title": "Synthetic browser test failure trend",
+                "title_size": "16",
+                "title_align": "left",
+                "show_legend": true,
+                "legend_layout": "auto",
+                "legend_columns": [
+                  "avg",
+                  "min",
+                  "max",
+                  "value",
+                  "sum"
+                ],
+                "type": "timeseries",
+                "requests": [
+                  {
+                    "formulas": [
+                      {
+                        "alias": "Browser test failure trend",
+                        "formula": "robust_trend(query1)"
+                      },
+                      {
+                        "alias": "Browser test failures",
+                        "formula": "query2"
+                      }
+                    ],
+                    "response_format": "timeseries",
+                    "queries": [
+                      {
+                        "query": "sum:synthetics.test_runs{$TestID,$Env,status:failure,$Region}.as_count()",
+                        "data_source": "metrics",
+                        "name": "query1"
+                      },
+                      {
+                        "query": "sum:synthetics.test_runs{$TestID,$Env,status:failure,$Region}.as_count()",
+                        "data_source": "metrics",
+                        "name": "query2"
+                      }
+                    ],
+                    "style": {
+                      "palette": "dog_classic",
+                      "line_type": "solid",
+                      "line_width": "normal"
+                    },
+                    "display_type": "line"
+                  }
+                ],
+                "custom_links": [
+                  {
+                    "override_label": "containers",
+                    "is_hidden": true
+                  },
+                  {
+                    "override_label": "hosts",
+                    "is_hidden": true
+                  },
+                  {
+                    "override_label": "logs",
+                    "is_hidden": true
+                  },
+                  {
+                    "override_label": "traces",
+                    "is_hidden": true,
+                    "link": "/apm/traces?query=public_id:{{$TestID.value}}&start={{timestamp_start}}&end={{timestamp_end}}&paused=true&metricQuery=true&historicalData=true"
+                  },
+                  {
+                    "override_label": "profiles",
+                    "is_hidden": true
+                  },
+                  {
+                    "link": "/synthetics/tests?query=test_id:{{$TestID.value}} type:api-{{check_subtype.value}}&from_ts={{timestamp_start}}&to_ts={{timestamp_end}}",
+                    "label": "View in Synthetics"
+                  }
+                ]
+              },
+              "layout": {
+                "x": 6,
+                "y": 0,
+                "width": 6,
+                "height": 2
+              }
+            }
+          ]
+        },
+        "layout": {
+          "x": 0,
+          "y": 0,
+          "width": 12,
+          "height": 3
+        }
+      },
+      {
+        "definition": {
+          "title": "Synthetic monitoring & testing usage",
+          "background_color": "vivid_purple",
+          "show_title": true,
+          "type": "group",
+          "layout_type": "ordered",
+          "widgets": [
+            {
+              "definition": {
+                "title": "Synthetic test runs by environment",
+                "title_size": "16",
+                "title_align": "left",
+                "requests": [
+                  {
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "query": "sum:datadog.estimated_usage.synthetics.api_test_runs{$TestID,$Browser,$Env,$Team,$Service,$Region} by {env}.as_count()",
+                        "data_source": "metrics",
+                        "name": "query1",
+                        "aggregator": "sum"
+                      },
+                      {
+                        "query": "sum:datadog.estimated_usage.synthetics.browser_test_runs{$TestID,$Browser,$Env,$Team,$Service,$Region} by {env}.as_count()",
+                        "data_source": "metrics",
+                        "name": "query2",
+                        "aggregator": "sum"
+                      }
+                    ],
+                    "formulas": [
+                      {
+                        "formula": "query1 + query2"
+                      }
+                    ],
+                    "sort": {
+                      "order_by": [
+                        {
+                          "type": "formula",
+                          "index": 0,
+                          "order": "desc"
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "type": "sunburst",
+                "legend": {
+                  "type": "automatic"
+                },
+                "custom_links": [
+                  {
+                    "override_label": "containers",
+                    "is_hidden": true
+                  },
+                  {
+                    "override_label": "hosts",
+                    "is_hidden": true
+                  },
+                  {
+                    "override_label": "logs",
+                    "is_hidden": true,
+                    "link": "/logs?from_ts={{timestamp_start}}&to_ts={{timestamp_end}}&query=public_id:{{$TestID.value}}"
+                  },
+                  {
+                    "override_label": "traces",
+                    "is_hidden": false,
+                    "link": "/apm/traces?query=public_id:{{$TestID.value}}&start={{timestamp_start}}&end={{timestamp_end}}&paused=true&metricQuery=true&historicalData=true"
+                  },
+                  {
+                    "override_label": "profiles",
+                    "is_hidden": true
+                  },
+                  {
+                    "link": "/synthetics/tests?query=test_id:{{$TestID.value}}&from_ts={{timestamp_start}}&to_ts={{timestamp_end}}",
+                    "label": "View in Synthetics"
+                  }
+                ]
+              },
+              "layout": {
+                "x": 0,
+                "y": 0,
+                "width": 6,
+                "height": 8
+              }
+            },
+            {
+              "definition": {
+                "title": "Synthetic tests by environment",
+                "title_size": "16",
+                "title_align": "left",
+                "type": "query_table",
+                "requests": [
+                  {
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "query": "sum:datadog.estimated_usage.synthetics.api_test_runs{$TestID,$Browser,$Env,$Team,$Service,$Region} by {env}.as_count()",
+                        "data_source": "metrics",
+                        "name": "query1",
+                        "aggregator": "sum"
+                      },
+                      {
+                        "query": "sum:datadog.estimated_usage.synthetics.browser_test_runs{$TestID,$Browser,$Env,$Team,$Service,$Region} by {env}.as_count()",
+                        "data_source": "metrics",
+                        "name": "query2",
+                        "aggregator": "sum"
+                      }
+                    ],
+                    "sort": {
+                      "count": 500,
+                      "order_by": [
+                        {
+                          "type": "formula",
+                          "index": 2,
+                          "order": "desc"
+                        }
+                      ]
+                    },
+                    "formulas": [
+                      {
+                        "alias": "API test runs",
+                        "cell_display_mode": "number",
+                        "formula": "query1"
+                      },
+                      {
+                        "alias": "Browser test runs",
+                        "cell_display_mode": "number",
+                        "formula": "query2"
+                      },
+                      {
+                        "alias": "Total test runs",
+                        "cell_display_mode": "number",
+                        "formula": "query1 + query2"
+                      }
+                    ]
+                  }
+                ],
+                "has_search_bar": "always",
+                "custom_links": [
+                  {
+                    "override_label": "containers",
+                    "is_hidden": true
+                  },
+                  {
+                    "override_label": "hosts",
+                    "is_hidden": true
+                  },
+                  {
+                    "override_label": "logs",
+                    "is_hidden": true
+                  },
+                  {
+                    "override_label": "traces",
+                    "is_hidden": true
+                  },
+                  {
+                    "override_label": "profiles",
+                    "is_hidden": true
+                  },
+                  {
+                    "link": "/synthetics/tests?query=env:{{env.value}}&from_ts={{timestamp_start}}&to_ts={{timestamp_end}}",
+                    "label": "View in Synthetics"
+                  }
+                ]
+              },
+              "layout": {
+                "x": 6,
+                "y": 0,
+                "width": 6,
+                "height": 4
+              }
+            },
+            {
+              "definition": {
+                "title": "Synthetic test runs by team",
+                "title_size": "16",
+                "title_align": "left",
+                "type": "query_table",
+                "requests": [
+                  {
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "query": "sum:datadog.estimated_usage.synthetics.api_test_runs{$Team,$Env,$TestID,$Service,$Browser,$Region,team:*} by {team}.as_count()",
+                        "data_source": "metrics",
+                        "name": "query1",
+                        "aggregator": "sum"
+                      },
+                      {
+                        "query": "sum:datadog.estimated_usage.synthetics.browser_test_runs{$Team,$Env,$TestID,$Service,$Browser,$Region,team:*} by {team}.as_count()",
+                        "data_source": "metrics",
+                        "name": "query2",
+                        "aggregator": "sum"
+                      }
+                    ],
+                    "sort": {
+                      "order_by": [
+                        {
+                          "type": "formula",
+                          "index": 2,
+                          "order": "desc"
+                        }
+                      ]
+                    },
+                    "formulas": [
+                      {
+                        "alias": "API test runs",
+                        "formula": "query1"
+                      },
+                      {
+                        "alias": "Browser test runs",
+                        "formula": "query2"
+                      },
+                      {
+                        "alias": "Total test runs",
+                        "formula": "query1 + query2"
+                      }
+                    ]
+                  }
+                ],
+                "custom_links": [
+                  {
+                    "override_label": "containers",
+                    "is_hidden": true
+                  },
+                  {
+                    "override_label": "hosts",
+                    "is_hidden": true
+                  },
+                  {
+                    "override_label": "logs",
+                    "is_hidden": true
+                  },
+                  {
+                    "override_label": "traces",
+                    "is_hidden": true
+                  },
+                  {
+                    "override_label": "profiles",
+                    "is_hidden": true
+                  },
+                  {
+                    "link": "/synthetics/tests?query=tag%3A(%22{{team}}%22)&from_ts={{timestamp_start}}&to_ts={{timestamp_end}}",
+                    "label": "View in Synthetics"
+                  }
+                ]
+              },
+              "layout": {
+                "x": 6,
+                "y": 4,
+                "width": 6,
+                "height": 4
+              }
+            },
+            {
+              "definition": {
+                "title": "Percent of successful test runs",
+                "title_size": "16",
+                "title_align": "left",
+                "type": "query_value",
+                "requests": [
+                  {
+                    "formulas": [
+                      {
+                        "formula": "query1 / query2 * 100"
+                      }
+                    ],
+                    "conditional_formats": [
+                      {
+                        "comparator": ">",
+                        "palette": "black_on_light_green",
+                        "value": 0
+                      }
+                    ],
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "query": "sum:synthetics.test_runs{$TestID,$Team,$Env,$Service,$Browser,$Region,status:success}.as_count()",
+                        "data_source": "metrics",
+                        "name": "query1",
+                        "aggregator": "sum"
+                      },
+                      {
+                        "query": "sum:synthetics.test_runs{$TestID,$Team,$Env,$Service,$Browser,$Region}.as_count()",
+                        "data_source": "metrics",
+                        "name": "query2",
+                        "aggregator": "sum"
+                      }
+                    ]
+                  }
+                ],
+                "autoscale": true,
+                "custom_unit": "%",
+                "custom_links": [
+                  {
+                    "override_label": "containers",
+                    "is_hidden": true
+                  },
+                  {
+                    "override_label": "hosts",
+                    "is_hidden": true
+                  },
+                  {
+                    "override_label": "logs",
+                    "is_hidden": true,
+                    "link": "/logs?from_ts={{timestamp_start}}&to_ts={{timestamp_end}}&query=public_id:{{$TestID.value}}"
+                  },
+                  {
+                    "override_label": "traces",
+                    "is_hidden": false,
+                    "link": "/apm/traces?query=public_id:{{$TestID.value}}&start={{timestamp_start}}&end={{timestamp_end}}&paused=true&metricQuery=true&historicalData=true"
+                  },
+                  {
+                    "override_label": "profiles",
+                    "is_hidden": true
+                  },
+                  {
+                    "link": "/synthetics/tests?query=status:alert env:{{$Env.value}} team:{{$Team.value}} test_id:{{$TestID.value}}&from_ts={{timestamp_start}}&to_ts={{timestamp_end}}",
+                    "label": "View in Synthetics"
+                  }
+                ],
+                "precision": 2,
+                "timeseries_background": {
+                  "type": "area",
+                  "yaxis": {
+                    "include_zero": false
+                  }
+                }
+              },
+              "layout": {
+                "x": 0,
+                "y": 8,
+                "width": 6,
+                "height": 3
+              }
+            },
+            {
+              "definition": {
+                "title": "Percent of failed test runs",
+                "title_size": "16",
+                "title_align": "left",
+                "type": "query_value",
+                "requests": [
+                  {
+                    "formulas": [
+                      {
+                        "formula": "query1 / query2 * 100"
+                      }
+                    ],
+                    "conditional_formats": [
+                      {
+                        "comparator": ">",
+                        "palette": "black_on_light_red",
+                        "value": 0
+                      }
+                    ],
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "query": "sum:synthetics.test_runs{$TestID,$Team,$Env,$Service,$Browser,$Region,status:failure}.as_count()",
+                        "data_source": "metrics",
+                        "name": "query1",
+                        "aggregator": "sum"
+                      },
+                      {
+                        "query": "sum:synthetics.test_runs{$TestID,$Team,$Env,$Service,$Browser,$Region}.as_count()",
+                        "data_source": "metrics",
+                        "name": "query2",
+                        "aggregator": "sum"
+                      }
+                    ]
+                  }
+                ],
+                "autoscale": true,
+                "custom_unit": "%",
+                "custom_links": [
+                  {
+                    "override_label": "containers",
+                    "is_hidden": true
+                  },
+                  {
+                    "override_label": "hosts",
+                    "is_hidden": true
+                  },
+                  {
+                    "override_label": "logs",
+                    "is_hidden": true,
+                    "link": "/logs?from_ts={{timestamp_start}}&to_ts={{timestamp_end}}&query=public_id:{{$TestID.value}}"
+                  },
+                  {
+                    "override_label": "traces",
+                    "is_hidden": false,
+                    "link": "/apm/traces?query=public_id:{{$TestID.value}}&start={{timestamp_start}}&end={{timestamp_end}}&paused=true&metricQuery=true&historicalData=true"
+                  },
+                  {
+                    "override_label": "profiles",
+                    "is_hidden": true
+                  },
+                  {
+                    "link": "/synthetics/tests?query=status:alert env:{{$Env.value}} team:{{$Team.value}} test_id:{{$TestID.value}}&from_ts={{timestamp_start}}&to_ts={{timestamp_end}}",
+                    "label": "View in Synthetics"
+                  }
+                ],
+                "precision": 2,
+                "timeseries_background": {
+                  "type": "area",
+                  "yaxis": {
+                    "include_zero": false
+                  }
+                }
+              },
+              "layout": {
+                "x": 6,
+                "y": 8,
+                "width": 6,
+                "height": 3
+              }
+            }
+          ]
+        },
+        "layout": {
+          "x": 0,
+          "y": 3,
+          "width": 12,
+          "height": 12
+        }
+      },
+      {
+        "definition": {
+          "title": "Private locations",
+          "background_color": "vivid_purple",
+          "show_title": true,
+          "type": "group",
+          "layout_type": "ordered",
+          "widgets": [
+            {
+              "definition": {
+                "type": "note",
+                "content": "[Private locations](https://docs.datadoghq.com/synthetics/private_locations?tab=docker) allow you to monitor internal-facing applications or any private endpoints that aren’t accessible from the public internet.\n\nWith [Private Location Monitoring](https://docs.datadoghq.com/synthetics/private_locations/monitoring) you can track private location health at a high level. With out-of-the-box metrics and monitors you can:\n\n- Ensure your private location is properly provisioned with enough space to run your Synthetic tests based on your needs\n\n- Track private location liveness, image version, and capacity data\n\n- Surface key metrics and potential warnings on the health of your private locations",
+                "background_color": "blue",
+                "font_size": "14",
+                "text_align": "left",
+                "vertical_align": "center",
+                "show_tick": false,
+                "tick_pos": "50%",
+                "tick_edge": "bottom",
+                "has_padding": true
+              },
+              "layout": {
+                "x": 0,
+                "y": 0,
+                "width": 12,
+                "height": 2
+              }
+            },
+            {
+              "definition": {
+                "title": "Total Synthetic workers by private location",
+                "title_size": "16",
+                "title_align": "left",
+                "type": "query_table",
+                "requests": [
+                  {
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "query": "sum:synthetics.pl.worker.running{*} by {team}",
+                        "data_source": "metrics",
+                        "name": "query1",
+                        "aggregator": "max"
+                      }
+                    ],
+                    "sort": {
+                      "count": 500,
+                      "order_by": [
+                        {
+                          "type": "formula",
+                          "index": 0,
+                          "order": "desc"
+                        }
+                      ]
+                    },
+                    "formulas": [
+                      {
+                        "formula": "query1"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "layout": {
+                "x": 0,
+                "y": 2,
+                "width": 12,
+                "height": 4
+              }
+            },
+            {
+              "definition": {
+                "title": "Average private location concurrency",
+                "title_size": "16",
+                "title_align": "left",
+                "show_legend": true,
+                "legend_layout": "auto",
+                "legend_columns": [
+                  "avg",
+                  "min",
+                  "max",
+                  "value",
+                  "sum"
+                ],
+                "type": "timeseries",
+                "requests": [
+                  {
+                    "formulas": [
+                      {
+                        "alias": "Private location concurrency",
+                        "formula": "query1"
+                      }
+                    ],
+                    "response_format": "timeseries",
+                    "queries": [
+                      {
+                        "query": "avg:synthetics.pl.worker.concurrency{$Team,$Env,$Service} by {location_id}",
+                        "data_source": "metrics",
+                        "name": "query1"
+                      }
+                    ],
+                    "style": {
+                      "palette": "cool",
+                      "line_type": "solid",
+                      "line_width": "normal"
+                    },
+                    "display_type": "area"
+                  }
+                ],
+                "custom_links": [
+                  {
+                    "override_label": "hosts",
+                    "is_hidden": true
+                  },
+                  {
+                    "override_label": "logs",
+                    "is_hidden": false,
+                    "link": "/logs?from_ts={{timestamp_start}}&to_ts={{timestamp_end}}&query=public_id:{{$TestID.value}}"
+                  },
+                  {
+                    "override_label": "traces",
+                    "is_hidden": false,
+                    "link": "/apm/traces?query=public_id:{{$TestID.value}}&start={{timestamp_start}}&end={{timestamp_end}}&paused=true&metricQuery=true&historicalData=true"
+                  },
+                  {
+                    "override_label": "profiles",
+                    "is_hidden": true
+                  },
+                  {
+                    "link": "/synthetics/settings/private-locations?query=id:{{location_id.value}}",
+                    "label": "View in Synthetics"
+                  }
+                ]
+              },
+              "layout": {
+                "x": 0,
+                "y": 6,
+                "width": 6,
+                "height": 4
+              }
+            },
+            {
+              "definition": {
+                "title": "Average private location pulled tests",
+                "title_size": "16",
+                "title_align": "left",
+                "show_legend": true,
+                "legend_layout": "auto",
+                "legend_columns": [
+                  "avg",
+                  "min",
+                  "max",
+                  "value",
+                  "sum"
+                ],
+                "type": "timeseries",
+                "requests": [
+                  {
+                    "formulas": [
+                      {
+                        "alias": "Average tests",
+                        "formula": "query1"
+                      }
+                    ],
+                    "response_format": "timeseries",
+                    "queries": [
+                      {
+                        "query": "avg:synthetics.pl.worker.pulled_tests{$Team,$Env,$Service} by {location_id}",
+                        "data_source": "metrics",
+                        "name": "query1"
+                      }
+                    ],
+                    "style": {
+                      "palette": "cool",
+                      "line_type": "solid",
+                      "line_width": "normal"
+                    },
+                    "display_type": "area"
+                  }
+                ],
+                "markers": [],
+                "custom_links": [
+                  {
+                    "override_label": "hosts",
+                    "is_hidden": true
+                  },
+                  {
+                    "override_label": "logs",
+                    "is_hidden": false,
+                    "link": "/logs?from_ts={{timestamp_start}}&to_ts={{timestamp_end}}&query=public_id:{{$TestID.value}}"
+                  },
+                  {
+                    "override_label": "traces",
+                    "is_hidden": false,
+                    "link": "/apm/traces?query=public_id:{{$TestID.value}}&start={{timestamp_start}}&end={{timestamp_end}}&paused=true&metricQuery=true&historicalData=true"
+                  },
+                  {
+                    "override_label": "profiles",
+                    "is_hidden": true
+                  },
+                  {
+                    "link": "/synthetics/settings/private-locations?query=id:{{location_id.value}}",
+                    "label": "View in Synthetics"
+                  }
+                ]
+              },
+              "layout": {
+                "x": 6,
+                "y": 6,
+                "width": 6,
+                "height": 4
+              }
+            }
+          ]
+        },
+        "layout": {
+          "x": 0,
+          "y": 15,
+          "width": 12,
+          "height": 11
+        }
+      }
+    ],
+    "template_variables": [
+      {
+        "name": "TestID",
+        "prefix": "check_id",
+        "available_values": [],
+        "default": "*"
+      },
+      {
+        "name": "Team",
+        "prefix": "team",
+        "available_values": [],
+        "default": "*"
+      },
+      {
+        "name": "Env",
+        "prefix": "env",
+        "available_values": [],
+        "default": "*"
+      },
+      {
+        "name": "Region",
+        "prefix": "region",
+        "available_values": [],
+        "default": "*"
+      },
+      {
+        "name": "Service",
+        "prefix": "service",
+        "available_values": [],
+        "default": "*"
+      },
+      {
+        "name": "Browser",
+        "prefix": "browsertype",
+        "available_values": [],
+        "default": "*"
+      }
+    ],
+    "layout_type": "ordered",
+    "notify_list": [],
+    "reflow_type": "fixed"
+  }
+
+EOF
+}
