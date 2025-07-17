@@ -64,3 +64,16 @@ module "datadog_dashboard_ecs" {
   client          = var.client
   aws_account_id  = var.aws_account_id
 }
+
+#################### Rum Frustration Signals ####################
+
+module "datadog_dashboard_ecs" {
+  source          = "./modules/dashboards/rum-frustration-signals"
+  datadog_api_key = var.datadog_api_key
+  datadog_app_key = var.datadog_app_key
+  datadog_api_url = var.datadog_api_url
+  environment     = var.environment
+  project         = var.project
+  client          = var.client
+  aws_account_id  = var.aws_account_id
+}
