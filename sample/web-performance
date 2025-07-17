@@ -1,0 +1,1756 @@
+resource "datadog_dashboard_json" "web-performance"{
+  dashboard = <<EOF
+
+{
+    "title": "${var.client} - ${var.project} - Web App Performance",
+    "description": "Este panel ofrece una vista panorámica de las aplicaciones monitoreadas con RUM. Ayuda a analizar lo siguiente:\n\n-   **Core Web Vitals**: Para todas las vistas, se destacan tres métricas clave de rendimiento del navegador: _Largest Contentful Paint (LCP)_, _Interaction to Next Paint (INP)_ y _Cumulative Layout Shift (CLS)_. También están disponibles otras métricas de rendimiento como el _tiempo de carga_.\n-   **XHR and Fetch request and resources**: Para todas las vistas, identifica cuellos de botella durante la carga de tu aplicación.\n-   **Long Tasks**: Eventos que bloquean el hilo principal del navegador durante más de 50 ms.",
+    "widgets": [
+      {
+        "definition": {
+          "title": "Overview",
+          "background_color": "vivid_purple",
+          "show_title": true,
+          "type": "group",
+          "layout_type": "ordered",
+          "widgets": [
+            {
+              "definition": {
+                "title": "Total page views",
+                "type": "query_value",
+                "requests": [
+                  {
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "@type:view $pathGroup $viewName $country $browser $deviceType $service $env $version $applicationName $loadingType $sessionType"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": []
+                      }
+                    ]
+                  }
+                ],
+                "autoscale": true,
+                "precision": 2
+              },
+              "layout": {
+                "x": 0,
+                "y": 0,
+                "width": 3,
+                "height": 1
+              }
+            },
+            {
+              "definition": {
+                "title": "P75 loading time",
+                "title_size": "16",
+                "title_align": "left",
+                "type": "query_value",
+                "requests": [
+                  {
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "$pathGroup $viewName $applicationName $loadingType $country $browser $deviceType $version $env $service $sessionType"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "metric": "@view.loading_time",
+                          "aggregation": "pc75"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": []
+                      }
+                    ]
+                  }
+                ],
+                "autoscale": true,
+                "precision": 2
+              },
+              "layout": {
+                "x": 3,
+                "y": 0,
+                "width": 3,
+                "height": 1
+              }
+            },
+            {
+              "definition": {
+                "title": "Number of page views and loading time",
+                "title_size": "16",
+                "title_align": "left",
+                "show_legend": true,
+                "legend_layout": "horizontal",
+                "legend_columns": [
+                  "avg",
+                  "min",
+                  "max",
+                  "value",
+                  "sum"
+                ],
+                "type": "timeseries",
+                "requests": [
+                  {
+                    "formulas": [
+                      {
+                        "formula": "query1",
+                        "alias": "Page view count"
+                      }
+                    ],
+                    "response_format": "timeseries",
+                    "on_right_yaxis": true,
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "@type:view $browser $deviceType $applicationName $pathGroup $viewName $country $service $env $version $loadingType $sessionType"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": []
+                      }
+                    ],
+                    "style": {
+                      "palette": "dog_classic",
+                      "line_type": "solid",
+                      "line_width": "normal"
+                    },
+                    "display_type": "bars"
+                  },
+                  {
+                    "formulas": [
+                      {
+                        "formula": "query6",
+                        "alias": "p75 loading time"
+                      }
+                    ],
+                    "response_format": "timeseries",
+                    "on_right_yaxis": false,
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "@type:view $browser $deviceType $applicationName $pathGroup $viewName $country $service $env $version $loadingType $sessionType"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "metric": "@view.loading_time",
+                          "aggregation": "pc75"
+                        },
+                        "name": "query6",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": []
+                      }
+                    ],
+                    "style": {
+                      "palette": "dog_classic",
+                      "line_type": "solid",
+                      "line_width": "normal"
+                    },
+                    "display_type": "line"
+                  }
+                ],
+                "yaxis": {
+                  "include_zero": true,
+                  "scale": "linear",
+                  "label": "",
+                  "min": "auto",
+                  "max": "auto"
+                },
+                "right_yaxis": {
+                  "include_zero": true,
+                  "scale": "linear",
+                  "label": "",
+                  "min": "auto",
+                  "max": "auto"
+                },
+                "markers": []
+              },
+              "layout": {
+                "x": 6,
+                "y": 0,
+                "width": 6,
+                "height": 3
+              }
+            },
+            {
+              "definition": {
+                "title": "Number of initial page loads vs SPA route changes",
+                "title_size": "16",
+                "title_align": "left",
+                "type": "toplist",
+                "requests": [
+                  {
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "data_source": "rum",
+                        "name": "query1",
+                        "search": {
+                          "query": "$pathGroup $viewName $applicationName $loadingType $country $browser $deviceType $version $env $service $sessionType @type:view"
+                        },
+                        "indexes": [
+                          "*"
+                        ],
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "group_by": [
+                          {
+                            "facet": "@view.loading_type",
+                            "limit": 10,
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            }
+                          }
+                        ]
+                      }
+                    ],
+                    "formulas": [
+                      {
+                        "formula": "query1"
+                      }
+                    ],
+                    "sort": {
+                      "count": 10,
+                      "order_by": [
+                        {
+                          "type": "formula",
+                          "index": 0,
+                          "order": "desc"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              "layout": {
+                "x": 0,
+                "y": 1,
+                "width": 6,
+                "height": 2
+              }
+            }
+          ]
+        },
+        "layout": {
+          "x": 0,
+          "y": 0,
+          "width": 12,
+          "height": 4
+        }
+      },
+      {
+        "definition": {
+          "title": "Core Web Vitals",
+          "background_color": "vivid_purple",
+          "show_title": true,
+          "type": "group",
+          "layout_type": "ordered",
+          "widgets": [
+            {
+              "definition": {
+                "title": "Largest Contentful Paint",
+                "title_size": "16",
+                "title_align": "left",
+                "show_legend": true,
+                "legend_layout": "vertical",
+                "legend_columns": [
+                  "avg",
+                  "min",
+                  "max",
+                  "value"
+                ],
+                "type": "timeseries",
+                "requests": [
+                  {
+                    "formulas": [
+                      {
+                        "formula": "query2",
+                        "alias": "p75 LCP"
+                      }
+                    ],
+                    "response_format": "timeseries",
+                    "on_right_yaxis": false,
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "@type:view $pathGroup $viewName $country $browser $deviceType $service $env $version $applicationName $loadingType $sessionType"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "metric": "@view.largest_contentful_paint",
+                          "aggregation": "pc75"
+                        },
+                        "name": "query2",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": []
+                      }
+                    ],
+                    "style": {
+                      "palette": "dog_classic",
+                      "line_type": "solid",
+                      "line_width": "normal"
+                    },
+                    "display_type": "line"
+                  }
+                ],
+                "yaxis": {
+                  "include_zero": true,
+                  "scale": "linear",
+                  "label": "",
+                  "min": "auto",
+                  "max": "auto"
+                },
+                "markers": [
+                  {
+                    "label": " > 4s ",
+                    "value": "y > 4000000000",
+                    "display_type": "error solid"
+                  },
+                  {
+                    "value": "2500000000 < y < 4000000000",
+                    "display_type": "warning solid"
+                  },
+                  {
+                    "value": "y < 2500000000",
+                    "display_type": "ok solid"
+                  }
+                ]
+              },
+              "layout": {
+                "x": 0,
+                "y": 0,
+                "width": 6,
+                "height": 3
+              }
+            },
+            {
+              "definition": {
+                "type": "note",
+                "content": "![core web vitals](/static/images/integration_dashboard/rum_core_web_vitals_performance_ranges.png)\n\nCore Web Vitals give you an overview of **load performance, interactivity, and visual stability**. Each metric comes with guidance on the range of values that translate to good user experience. Datadog recommends monitoring the **75th percentile** for these metrics. [Learn more](https://docs.datadoghq.com/real_user_monitoring/browser/monitoring_page_performance/#core-web-vitals)",
+                "background_color": "transparent",
+                "font_size": "12",
+                "text_align": "center",
+                "vertical_align": "center",
+                "show_tick": false,
+                "tick_pos": "50%",
+                "tick_edge": "left",
+                "has_padding": false
+              },
+              "layout": {
+                "x": 6,
+                "y": 0,
+                "width": 6,
+                "height": 3
+              }
+            },
+            {
+              "definition": {
+                "title": "Interaction to Next Paint",
+                "title_size": "16",
+                "title_align": "left",
+                "show_legend": true,
+                "legend_layout": "vertical",
+                "legend_columns": [
+                  "avg",
+                  "min",
+                  "max",
+                  "value"
+                ],
+                "type": "timeseries",
+                "requests": [
+                  {
+                    "formulas": [
+                      {
+                        "formula": "query2",
+                        "alias": "p75 INP"
+                      }
+                    ],
+                    "response_format": "timeseries",
+                    "on_right_yaxis": false,
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "@type:view $pathGroup $viewName $country $browser $deviceType $service $env $version $applicationName $loadingType $sessionType"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "metric": "@view.interaction_to_next_paint",
+                          "aggregation": "pc75"
+                        },
+                        "name": "query2",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": []
+                      }
+                    ],
+                    "style": {
+                      "palette": "dog_classic",
+                      "line_type": "solid",
+                      "line_width": "normal"
+                    },
+                    "display_type": "line"
+                  }
+                ],
+                "yaxis": {
+                  "include_zero": true,
+                  "scale": "linear",
+                  "label": "",
+                  "min": "auto",
+                  "max": "auto"
+                },
+                "markers": [
+                  {
+                    "label": " > 500ms ",
+                    "value": "y > 500000000",
+                    "display_type": "error solid"
+                  },
+                  {
+                    "value": "200000000 < y < 500000000",
+                    "display_type": "warning solid"
+                  },
+                  {
+                    "value": "y < 200000000",
+                    "display_type": "ok solid"
+                  }
+                ]
+              },
+              "layout": {
+                "x": 0,
+                "y": 3,
+                "width": 6,
+                "height": 3
+              }
+            },
+            {
+              "definition": {
+                "title": "Cumulative Layout Shift",
+                "title_size": "16",
+                "title_align": "left",
+                "show_legend": true,
+                "legend_layout": "vertical",
+                "legend_columns": [
+                  "avg",
+                  "min",
+                  "max",
+                  "value"
+                ],
+                "type": "timeseries",
+                "requests": [
+                  {
+                    "formulas": [
+                      {
+                        "formula": "query2",
+                        "alias": "p75 CLS"
+                      }
+                    ],
+                    "response_format": "timeseries",
+                    "on_right_yaxis": false,
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "@type:view $pathGroup $viewName $country $browser $deviceType $service $env $version $applicationName $loadingType $sessionType"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "metric": "@view.cumulative_layout_shift",
+                          "aggregation": "pc75"
+                        },
+                        "name": "query2",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": []
+                      }
+                    ],
+                    "style": {
+                      "palette": "dog_classic",
+                      "line_type": "solid",
+                      "line_width": "normal"
+                    },
+                    "display_type": "line"
+                  }
+                ],
+                "yaxis": {
+                  "include_zero": true,
+                  "scale": "linear",
+                  "label": "",
+                  "min": "auto",
+                  "max": "auto"
+                },
+                "markers": [
+                  {
+                    "label": " > 0.25 ",
+                    "value": "y > 0.25",
+                    "display_type": "error solid"
+                  },
+                  {
+                    "value": "0.1 < y < 0.25",
+                    "display_type": "warning solid"
+                  },
+                  {
+                    "value": "y < 0.1",
+                    "display_type": "ok solid"
+                  }
+                ]
+              },
+              "layout": {
+                "x": 6,
+                "y": 3,
+                "width": 6,
+                "height": 3
+              }
+            },
+            {
+              "definition": {
+                "title": "Performance overview of the most popular pages",
+                "title_size": "16",
+                "title_align": "left",
+                "type": "query_table",
+                "requests": [
+                  {
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "data_source": "rum",
+                        "name": "query1",
+                        "search": {
+                          "query": "$browser $deviceType $applicationName $pathGroup $viewName $country $service $env $version $loadingType $sessionType @type:view"
+                        },
+                        "indexes": [
+                          "*"
+                        ],
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "group_by": [
+                          {
+                            "facet": "@view.name",
+                            "limit": 15,
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "data_source": "rum",
+                        "name": "query2",
+                        "search": {
+                          "query": "$browser $deviceType $applicationName $pathGroup $viewName $country $service $env $version $loadingType $sessionType @type:view"
+                        },
+                        "indexes": [
+                          "*"
+                        ],
+                        "compute": {
+                          "aggregation": "pc75",
+                          "metric": "@view.loading_time"
+                        },
+                        "group_by": [
+                          {
+                            "facet": "@view.name",
+                            "limit": 15,
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "data_source": "rum",
+                        "name": "query3",
+                        "search": {
+                          "query": "$browser $deviceType $applicationName $pathGroup $viewName $country $service $env $version $loadingType $sessionType @type:view"
+                        },
+                        "indexes": [
+                          "*"
+                        ],
+                        "compute": {
+                          "aggregation": "pc75",
+                          "metric": "@view.largest_contentful_paint"
+                        },
+                        "group_by": [
+                          {
+                            "facet": "@view.name",
+                            "limit": 15,
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "data_source": "rum",
+                        "name": "query4",
+                        "search": {
+                          "query": "$browser $deviceType $applicationName $pathGroup $viewName $country $service $env $version $loadingType $sessionType @type:view"
+                        },
+                        "indexes": [
+                          "*"
+                        ],
+                        "compute": {
+                          "aggregation": "pc75",
+                          "metric": "@view.interaction_to_next_paint"
+                        },
+                        "group_by": [
+                          {
+                            "facet": "@view.name",
+                            "limit": 15,
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "data_source": "rum",
+                        "name": "query5",
+                        "search": {
+                          "query": "$browser $deviceType $applicationName $pathGroup $viewName $country $service $env $version $loadingType $sessionType @type:view"
+                        },
+                        "indexes": [
+                          "*"
+                        ],
+                        "compute": {
+                          "aggregation": "pc75",
+                          "metric": "@view.cumulative_layout_shift"
+                        },
+                        "group_by": [
+                          {
+                            "facet": "@view.name",
+                            "limit": 15,
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            }
+                          }
+                        ]
+                      }
+                    ],
+                    "sort": {
+                      "count": 15,
+                      "order_by": [
+                        {
+                          "type": "formula",
+                          "index": 0,
+                          "order": "desc"
+                        }
+                      ]
+                    },
+                    "formulas": [
+                      {
+                        "alias": "Count",
+                        "cell_display_mode": "bar",
+                        "formula": "query1"
+                      },
+                      {
+                        "alias": "PC75 view load time",
+                        "cell_display_mode": "number",
+                        "formula": "query2"
+                      },
+                      {
+                        "alias": "PC75 LCP",
+                        "cell_display_mode": "number",
+                        "conditional_formats": [
+                          {
+                            "palette": "red_on_white",
+                            "comparator": ">",
+                            "value": 4000000000
+                          },
+                          {
+                            "palette": "yellow_on_white",
+                            "comparator": ">",
+                            "value": 2500000000
+                          },
+                          {
+                            "palette": "green_on_white",
+                            "comparator": "<=",
+                            "value": 2500000000
+                          }
+                        ],
+                        "formula": "query3"
+                      },
+                      {
+                        "alias": "PC75 INP",
+                        "cell_display_mode": "number",
+                        "conditional_formats": [
+                          {
+                            "palette": "red_on_white",
+                            "comparator": ">",
+                            "value": 500000000
+                          },
+                          {
+                            "palette": "yellow_on_white",
+                            "comparator": ">",
+                            "value": 200000000
+                          },
+                          {
+                            "palette": "green_on_white",
+                            "comparator": "<=",
+                            "value": 200000000
+                          }
+                        ],
+                        "formula": "query4"
+                      },
+                      {
+                        "alias": "PC75 CLS",
+                        "cell_display_mode": "number",
+                        "conditional_formats": [
+                          {
+                            "palette": "red_on_white",
+                            "comparator": ">",
+                            "value": 0.25
+                          },
+                          {
+                            "palette": "yellow_on_white",
+                            "comparator": ">",
+                            "value": 0.1
+                          },
+                          {
+                            "palette": "green_on_white",
+                            "comparator": "<=",
+                            "value": 0.1
+                          }
+                        ],
+                        "formula": "query5"
+                      }
+                    ]
+                  }
+                ],
+                "has_search_bar": "never",
+                "custom_links": [
+                  {
+                    "link": "/dash/integration/rum_errors_browser?tpl_var_viewName={{@view.name.value}}",
+                    "label": "Analyze errors for {{@view.name.value}}"
+                  },
+                  {
+                    "link": "/dash/integration/rum_resource_browser_and_mobile?tpl_var_viewName={{@view.name.value}}",
+                    "label": "View resources for {{@view.name.value}}"
+                  }
+                ]
+              },
+              "layout": {
+                "x": 0,
+                "y": 6,
+                "width": 12,
+                "height": 3
+              }
+            }
+          ]
+        },
+        "layout": {
+          "x": 0,
+          "y": 4,
+          "width": 12,
+          "height": 10
+        }
+      },
+      {
+        "definition": {
+          "title": "XHR and Fetch Analysis (past 4 hours)",
+          "title_align": "left",
+          "background_color": "vivid_purple",
+          "show_title": true,
+          "type": "group",
+          "layout_type": "ordered",
+          "widgets": [
+            {
+              "definition": {
+                "title": "Number of requests grouped by type",
+                "title_size": "16",
+                "title_align": "left",
+                "time": {
+                  "live_span": "4h"
+                },
+                "type": "toplist",
+                "requests": [
+                  {
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "@type:resource $pathGroup $viewName $applicationName @resource.type:(xhr OR fetch) $country $browser $deviceType $version $env $service $loadingType $sessionType"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@resource.type",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 10
+                          }
+                        ]
+                      }
+                    ],
+                    "formulas": [
+                      {
+                        "formula": "query1"
+                      }
+                    ],
+                    "sort": {
+                      "count": 10,
+                      "order_by": [
+                        {
+                          "type": "formula",
+                          "index": 0,
+                          "order": "desc"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              "layout": {
+                "x": 0,
+                "y": 0,
+                "width": 4,
+                "height": 2
+              }
+            },
+            {
+              "definition": {
+                "title": "Count and duration of API calls",
+                "title_size": "16",
+                "title_align": "left",
+                "show_legend": true,
+                "legend_layout": "horizontal",
+                "legend_columns": [
+                  "avg",
+                  "min",
+                  "max",
+                  "value"
+                ],
+                "time": {
+                  "live_span": "4h"
+                },
+                "type": "timeseries",
+                "requests": [
+                  {
+                    "formulas": [
+                      {
+                        "formula": "query2",
+                        "alias": "Resource count"
+                      }
+                    ],
+                    "response_format": "timeseries",
+                    "on_right_yaxis": true,
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "@type:resource @resource.type:(xhr OR fetch) $pathGroup $viewName $applicationName $country $browser $deviceType $version $env $service $loadingType $sessionType"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "name": "query2",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@resource.type",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 10
+                          }
+                        ]
+                      }
+                    ],
+                    "style": {
+                      "palette": "dog_classic",
+                      "line_type": "solid",
+                      "line_width": "normal"
+                    },
+                    "display_type": "bars"
+                  },
+                  {
+                    "formulas": [
+                      {
+                        "formula": "query2",
+                        "alias": "p75 resource duration"
+                      }
+                    ],
+                    "response_format": "timeseries",
+                    "on_right_yaxis": false,
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "@type:resource @resource.type:(xhr OR fetch) $pathGroup $viewName $applicationName $country $browser $deviceType $version $env $service $loadingType $sessionType"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "metric": "@resource.duration",
+                          "aggregation": "pc75"
+                        },
+                        "name": "query2",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": []
+                      }
+                    ],
+                    "style": {
+                      "palette": "dog_classic",
+                      "line_type": "solid",
+                      "line_width": "normal"
+                    },
+                    "display_type": "line"
+                  }
+                ],
+                "yaxis": {
+                  "include_zero": true,
+                  "scale": "linear",
+                  "label": "",
+                  "min": "auto",
+                  "max": "auto"
+                },
+                "right_yaxis": {
+                  "include_zero": true,
+                  "scale": "linear",
+                  "label": "",
+                  "min": "auto",
+                  "max": "auto"
+                },
+                "markers": []
+              },
+              "layout": {
+                "x": 4,
+                "y": 0,
+                "width": 8,
+                "height": 2
+              }
+            },
+            {
+              "definition": {
+                "title": "Top XHR and Fetch calls",
+                "title_size": "16",
+                "title_align": "left",
+                "time": {
+                  "live_span": "4h"
+                },
+                "type": "query_table",
+                "requests": [
+                  {
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "@resource.type:(xhr OR fetch) $pathGroup $viewName $applicationName $country $browser $deviceType $version $env $service $loadingType @type:resource $sessionType"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "rum"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@resource.url_path_group",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 10
+                          }
+                        ]
+                      },
+                      {
+                        "search": {
+                          "query": "@resource.type:(xhr OR fetch) $pathGroup $viewName $applicationName $country $browser $deviceType $version $env $service $loadingType @type:resource $sessionType"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "metric": "@resource.duration",
+                          "aggregation": "median"
+                        },
+                        "name": "query2",
+                        "indexes": [
+                          "rum"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@resource.url_path_group",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 10
+                          }
+                        ]
+                      },
+                      {
+                        "search": {
+                          "query": "@resource.type:(xhr OR fetch) $pathGroup $viewName $applicationName $country $browser $deviceType $version $env $service $loadingType @type:resource $sessionType"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "metric": "@resource.size",
+                          "aggregation": "median"
+                        },
+                        "name": "query3",
+                        "indexes": [
+                          "rum"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@resource.url_path_group",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 10
+                          }
+                        ]
+                      }
+                    ],
+                    "sort": {
+                      "count": 10,
+                      "order_by": [
+                        {
+                          "type": "formula",
+                          "index": 0,
+                          "order": "desc"
+                        }
+                      ]
+                    },
+                    "formulas": [
+                      {
+                        "alias": "Count",
+                        "cell_display_mode": "bar",
+                        "formula": "query1"
+                      },
+                      {
+                        "alias": "Load time",
+                        "cell_display_mode": "bar",
+                        "formula": "query2"
+                      },
+                      {
+                        "alias": "Size",
+                        "cell_display_mode": "bar",
+                        "formula": "query3"
+                      }
+                    ]
+                  }
+                ],
+                "has_search_bar": "never"
+              },
+              "layout": {
+                "x": 0,
+                "y": 2,
+                "width": 12,
+                "height": 3
+              }
+            }
+          ]
+        },
+        "layout": {
+          "x": 0,
+          "y": 14,
+          "width": 12,
+          "height": 6,
+          "is_column_break": true
+        }
+      },
+      {
+        "definition": {
+          "title": "Resources Analysis (past 4 hours)",
+          "title_align": "left",
+          "background_color": "vivid_purple",
+          "show_title": true,
+          "type": "group",
+          "layout_type": "ordered",
+          "widgets": [
+            {
+              "definition": {
+                "title": "Resources grouped by type",
+                "title_size": "16",
+                "title_align": "left",
+                "show_legend": true,
+                "legend_layout": "vertical",
+                "legend_columns": [
+                  "avg",
+                  "min",
+                  "max",
+                  "value",
+                  "sum"
+                ],
+                "time": {
+                  "live_span": "4h"
+                },
+                "type": "timeseries",
+                "requests": [
+                  {
+                    "formulas": [
+                      {
+                        "formula": "query2"
+                      }
+                    ],
+                    "queries": [
+                      {
+                        "data_source": "rum",
+                        "name": "query2",
+                        "search": {
+                          "query": "$pathGroup $viewName $applicationName -@resource.type:(xhr OR fetch) $country $browser $deviceType $version $env $service $loadingType $sessionType @type:resource"
+                        },
+                        "indexes": [
+                          "*"
+                        ],
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "group_by": [
+                          {
+                            "facet": "@resource.type",
+                            "limit": 10,
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            }
+                          }
+                        ]
+                      }
+                    ],
+                    "response_format": "timeseries",
+                    "style": {
+                      "palette": "dog_classic",
+                      "line_type": "solid",
+                      "line_width": "normal"
+                    },
+                    "display_type": "bars"
+                  }
+                ],
+                "yaxis": {
+                  "include_zero": true,
+                  "scale": "linear",
+                  "label": "",
+                  "min": "auto",
+                  "max": "auto"
+                },
+                "markers": []
+              },
+              "layout": {
+                "x": 0,
+                "y": 0,
+                "width": 6,
+                "height": 4
+              }
+            },
+            {
+              "definition": {
+                "title": "Performance impact of 3rd party resources",
+                "title_size": "16",
+                "title_align": "left",
+                "time": {
+                  "live_span": "4h"
+                },
+                "type": "query_table",
+                "requests": [
+                  {
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "-@resource.type:(xhr OR fetch) -@resource.provider.type:\"first party\" $viewName $country $browser $deviceType $service $env $version $applicationName $loadingType $pathGroup @type:resource $sessionType"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "rum"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@resource.url_host",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 10
+                          }
+                        ]
+                      },
+                      {
+                        "search": {
+                          "query": "-@resource.type:(xhr OR fetch) -@resource.provider.type:\"first party\" $viewName $country $browser $deviceType $service $env $version $applicationName $loadingType $pathGroup @type:resource $sessionType"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "metric": "@resource.duration",
+                          "aggregation": "median"
+                        },
+                        "name": "query2",
+                        "indexes": [
+                          "rum"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@resource.url_host",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 10
+                          }
+                        ]
+                      }
+                    ],
+                    "sort": {
+                      "count": 10,
+                      "order_by": [
+                        {
+                          "type": "formula",
+                          "index": 0,
+                          "order": "desc"
+                        }
+                      ]
+                    },
+                    "formulas": [
+                      {
+                        "alias": "Count",
+                        "cell_display_mode": "bar",
+                        "formula": "query1"
+                      },
+                      {
+                        "alias": "Load time",
+                        "cell_display_mode": "bar",
+                        "formula": "query2"
+                      }
+                    ]
+                  }
+                ],
+                "has_search_bar": "never"
+              },
+              "layout": {
+                "x": 6,
+                "y": 0,
+                "width": 6,
+                "height": 4
+              }
+            },
+            {
+              "definition": {
+                "title": "Most requested resources",
+                "title_size": "16",
+                "title_align": "left",
+                "time": {
+                  "live_span": "4h"
+                },
+                "type": "query_table",
+                "requests": [
+                  {
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "-@resource.type:(xhr OR fetch) $pathGroup $viewName $applicationName $country $browser $deviceType $version $env $service $loadingType @type:resource $sessionType"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "rum"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@resource.url_path_group",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 10
+                          },
+                          {
+                            "facet": "@resource.url_host",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 10
+                          }
+                        ]
+                      },
+                      {
+                        "search": {
+                          "query": "-@resource.type:(xhr OR fetch) $pathGroup $viewName $applicationName $country $browser $deviceType $version $env $service $loadingType @type:resource $sessionType"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "metric": "@resource.duration",
+                          "aggregation": "median"
+                        },
+                        "name": "query2",
+                        "indexes": [
+                          "rum"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@resource.url_path_group",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 10
+                          },
+                          {
+                            "facet": "@resource.url_host",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 10
+                          }
+                        ]
+                      },
+                      {
+                        "search": {
+                          "query": "-@resource.type:(xhr OR fetch) $pathGroup $viewName $applicationName $country $browser $deviceType $version $env $service $loadingType @type:resource $sessionType"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "metric": "@resource.size",
+                          "aggregation": "median"
+                        },
+                        "name": "query3",
+                        "indexes": [
+                          "rum"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@resource.url_path_group",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 10
+                          },
+                          {
+                            "facet": "@resource.url_host",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 10
+                          }
+                        ]
+                      }
+                    ],
+                    "sort": {
+                      "count": 100,
+                      "order_by": [
+                        {
+                          "type": "formula",
+                          "index": 0,
+                          "order": "desc"
+                        }
+                      ]
+                    },
+                    "formulas": [
+                      {
+                        "alias": "Count",
+                        "cell_display_mode": "bar",
+                        "formula": "query1"
+                      },
+                      {
+                        "alias": "Load time",
+                        "cell_display_mode": "bar",
+                        "formula": "query2"
+                      },
+                      {
+                        "alias": "Size",
+                        "cell_display_mode": "bar",
+                        "formula": "query3"
+                      }
+                    ]
+                  }
+                ],
+                "has_search_bar": "never"
+              },
+              "layout": {
+                "x": 0,
+                "y": 4,
+                "width": 12,
+                "height": 3
+              }
+            }
+          ]
+        },
+        "layout": {
+          "x": 0,
+          "y": 20,
+          "width": 12,
+          "height": 8
+        }
+      },
+      {
+        "definition": {
+          "title": "Long Tasks Analysis",
+          "title_align": "left",
+          "background_color": "vivid_purple",
+          "show_title": true,
+          "type": "group",
+          "layout_type": "ordered",
+          "widgets": [
+            {
+              "definition": {
+                "title": "Number of long tasks per view",
+                "title_size": "16",
+                "title_align": "left",
+                "show_legend": true,
+                "legend_layout": "vertical",
+                "legend_columns": [
+                  "avg",
+                  "value"
+                ],
+                "type": "timeseries",
+                "requests": [
+                  {
+                    "formulas": [
+                      {
+                        "formula": "query2",
+                        "alias": "Long tasks per view"
+                      }
+                    ],
+                    "response_format": "timeseries",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "@type:view $pathGroup $viewName $country $browser $deviceType $service $env $version $applicationName $loadingType $sessionType"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "metric": "@view.long_task.count",
+                          "aggregation": "avg"
+                        },
+                        "name": "query2",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": []
+                      }
+                    ],
+                    "style": {
+                      "palette": "dog_classic",
+                      "line_type": "solid",
+                      "line_width": "normal"
+                    },
+                    "display_type": "line"
+                  }
+                ],
+                "yaxis": {
+                  "include_zero": true,
+                  "scale": "linear",
+                  "label": "",
+                  "min": "auto",
+                  "max": "auto"
+                },
+                "markers": []
+              },
+              "layout": {
+                "x": 0,
+                "y": 0,
+                "width": 6,
+                "height": 3
+              }
+            },
+            {
+              "definition": {
+                "title": "Long tasks impact on top user actions",
+                "title_size": "16",
+                "title_align": "left",
+                "type": "query_table",
+                "requests": [
+                  {
+                    "response_format": "scalar",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "@action.long_task.count:* $pathGroup $viewName $country $browser $deviceType $service $env $version $applicationName $loadingType @type:action $sessionType"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "aggregation": "count"
+                        },
+                        "name": "query1",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@action.name",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 15
+                          }
+                        ]
+                      },
+                      {
+                        "search": {
+                          "query": "@action.long_task.count:* $pathGroup $viewName $country $browser $deviceType $service $env $version $applicationName $loadingType @type:action $sessionType"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "metric": "@action.long_task.count",
+                          "aggregation": "avg"
+                        },
+                        "name": "query2",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": [
+                          {
+                            "facet": "@action.name",
+                            "sort": {
+                              "aggregation": "count",
+                              "order": "desc"
+                            },
+                            "limit": 15
+                          }
+                        ]
+                      }
+                    ],
+                    "sort": {
+                      "count": 15,
+                      "order_by": [
+                        {
+                          "type": "formula",
+                          "index": 0,
+                          "order": "desc"
+                        }
+                      ]
+                    },
+                    "formulas": [
+                      {
+                        "alias": "Count",
+                        "cell_display_mode": "bar",
+                        "formula": "query1"
+                      },
+                      {
+                        "alias": "Count of long tasks",
+                        "cell_display_mode": "bar",
+                        "formula": "query2"
+                      }
+                    ]
+                  }
+                ],
+                "has_search_bar": "never"
+              },
+              "layout": {
+                "x": 6,
+                "y": 0,
+                "width": 6,
+                "height": 3
+              }
+            },
+            {
+              "definition": {
+                "title": "P75 long task duration",
+                "title_size": "16",
+                "title_align": "left",
+                "show_legend": true,
+                "legend_layout": "vertical",
+                "legend_columns": [
+                  "avg",
+                  "value"
+                ],
+                "type": "timeseries",
+                "requests": [
+                  {
+                    "formulas": [
+                      {
+                        "formula": "query2",
+                        "alias": "Duration"
+                      }
+                    ],
+                    "response_format": "timeseries",
+                    "queries": [
+                      {
+                        "search": {
+                          "query": "@type:long_task $pathGroup $viewName $country $browser $deviceType $service $env $version $applicationName $loadingType $sessionType"
+                        },
+                        "data_source": "rum",
+                        "compute": {
+                          "metric": "@long_task.duration",
+                          "aggregation": "pc75"
+                        },
+                        "name": "query2",
+                        "indexes": [
+                          "*"
+                        ],
+                        "group_by": []
+                      }
+                    ],
+                    "style": {
+                      "palette": "dog_classic",
+                      "line_type": "solid",
+                      "line_width": "normal"
+                    },
+                    "display_type": "line"
+                  }
+                ],
+                "yaxis": {
+                  "include_zero": true,
+                  "scale": "linear",
+                  "label": "",
+                  "min": "auto",
+                  "max": "auto"
+                },
+                "markers": []
+              },
+              "layout": {
+                "x": 0,
+                "y": 3,
+                "width": 6,
+                "height": 2
+              }
+            },
+            {
+              "definition": {
+                "type": "note",
+                "content": "A long task event is generated for any task that blocks the browser's main thread for **more than 50ms**. Web applications should be available to respond to user input in less than 50ms to offer the best user experience. [Learn more](https://web.dev/rail/#response:-process-events-in-under-50ms)",
+                "background_color": "yellow",
+                "font_size": "14",
+                "text_align": "left",
+                "vertical_align": "center",
+                "show_tick": true,
+                "tick_pos": "50%",
+                "tick_edge": "top",
+                "has_padding": true
+              },
+              "layout": {
+                "x": 6,
+                "y": 3,
+                "width": 6,
+                "height": 2
+              }
+            }
+          ]
+        },
+        "layout": {
+          "x": 0,
+          "y": 28,
+          "width": 12,
+          "height": 6
+        }
+      }
+    ],
+    "template_variables": [
+      {
+        "name": "viewName",
+        "prefix": "@view.name",
+        "available_values": [],
+        "default": "*"
+      },
+      {
+        "name": "country",
+        "prefix": "@geo.country",
+        "available_values": [],
+        "default": "*"
+      },
+      {
+        "name": "browser",
+        "prefix": "@browser.name",
+        "available_values": [],
+        "default": "*"
+      },
+      {
+        "name": "deviceType",
+        "prefix": "@device.type",
+        "available_values": [],
+        "default": "*"
+      },
+      {
+        "name": "service",
+        "prefix": "service",
+        "available_values": [],
+        "default": "*"
+      },
+      {
+        "name": "env",
+        "prefix": "env",
+        "available_values": [],
+        "default": "*"
+      },
+      {
+        "name": "version",
+        "prefix": "version",
+        "available_values": [],
+        "default": "*"
+      },
+      {
+        "name": "applicationName",
+        "prefix": "@application.name",
+        "available_values": [],
+        "default": "*"
+      },
+      {
+        "name": "loadingType",
+        "prefix": "@view.loading_type",
+        "available_values": [],
+        "default": "*"
+      },
+      {
+        "name": "pathGroup",
+        "prefix": "@view.url_path_group",
+        "available_values": [],
+        "default": "*"
+      },
+      {
+        "name": "sessionType",
+        "prefix": "@session.type",
+        "available_values": [],
+        "default": "user"
+      }
+    ],
+    "layout_type": "ordered",
+    "notify_list": [],
+    "reflow_type": "fixed"
+  }
+EOF
+}
