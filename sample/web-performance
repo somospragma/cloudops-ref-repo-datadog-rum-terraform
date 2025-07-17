@@ -1,4 +1,4 @@
-resource "datadog_dashboard_json" "web-performance"{
+resource "datadog_dashboard_json" "rum-web-performance"{
   dashboard = <<EOF
 
 {
